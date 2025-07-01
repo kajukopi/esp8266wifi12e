@@ -1,92 +1,108 @@
 # 🚀 ESP8266 Web OTA + Servo + LED Control
 
-This project is a complete documentation of building a responsive web-based control system for a Lolin NodeMCU V1.0 (ESP8266 12E), featuring OTA (Over-the-Air) firmware updates and browser-based device control including a servo and built-in LED.
+This project documents the development of a responsive web-based control system for the Lolin NodeMCU V1.0 (ESP8266 12E), featuring OTA (Over-the-Air) firmware updates and device control via a browser. The system allows control of a servo motor and built-in LED through an intuitive web interface.
 
 ---
 
 ## 📌 Project Objectives
 
 - Automate firmware `.bin` upload to ESP8266 using GitHub Actions.
-- Enable OTA firmware updates through a browser interface.
-- Control a servo motor using a web slider.
-- Toggle the onboard LED from the web interface.
-- Display the ESP8266’s IP address and WiFi signal strength.
-- Build a responsive and mobile-friendly web interface using Bootstrap.
+- Enable OTA firmware updates through a web interface.
+- Control a servo motor using an HTML slider.
+- Toggle the onboard LED from a browser switch.
+- Display IP address and WiFi signal strength.
+- Build a clean, responsive, and mobile-friendly interface using Bootstrap.
 
 ---
 
 ## 🛠️ Development Process
 
 ### 1. Project Initialization
-The project started with a basic structure containing the main Arduino sketch file (`sketch.ino`) and a GitHub Actions workflow (`compile.yml`) to automate builds.
+Set up project structure:
+- `sketch.ino` for Arduino code.
+- GitHub Actions workflow (`compile.yml`) for automation.
 
 ### 2. GitHub Actions Setup
-Configured `arduino-cli` in GitHub Actions to:
-- Add the ESP8266 board manager URL.
-- Install the ESP8266 core.
-- Compile the Arduino sketch.
-- Upload the resulting `.bin` file as an artifact.
+Configured GitHub CI/CD to:
+- Install `arduino-cli`.
+- Add ESP8266 board index.
+- Compile code and export `.bin`.
+- Upload firmware as a downloadable artifact.
 
-### 3. Automated Firmware Naming
-The firmware file was renamed dynamically to include the build date, making it easier to track and manage.
+### 3. Auto-Naming Firmware with Date
+Each firmware build is renamed with the current date to make it easier to manage multiple versions.
 
-### 4. Basic Web Server & OTA Integration
-The ESP8266 was configured to host a web server that allows OTA updates using `ESP8266HTTPUpdateServer` and `ArduinoOTA`.
+### 4. Basic Web Server & OTA
+Enabled OTA firmware updates via `ESP8266HTTPUpdateServer` and `ArduinoOTA`, served over a local web server.
 
-### 5. Adding Servo Control
-A servo was connected to pin D5 and controlled via an HTML range slider from the web interface.
+### 5. Servo Control Implementation
+Connected a servo motor to D5 and enabled control through a web-based slider.
 
-### 6. Improving Servo Range
-Initially, the servo only rotated 90°. The control logic was adjusted to expand the range up to ~170° with better responsiveness.
+### 6. Servo Range Fix
+Improved servo movement from limited 90° to a responsive ~170° range by adjusting control logic.
 
-### 7. Web Interface Enhancement
-The user interface was improved using Bootstrap, making it clean, responsive, and easy to use, including navigation buttons and spacing.
+### 7. UI Enhancements
+Used Bootstrap to create a clean, modern, and responsive layout including buttons and spacing for better user experience.
 
 ### 8. LED Toggle Feature
-A toggle switch was added to control the built-in LED via the web interface.
+Added a toggle switch in the web UI to control the ESP8266's built-in LED (active LOW).
 
 ### 9. Network Info Display
-The device’s IP address and WiFi signal strength were added to the web UI for user reference.
+Displayed ESP8266's IP address and WiFi signal strength on the web UI.
 
-### 10. Mobile-Friendly Design
-The entire web interface was optimized for mobile browsers, ensuring smooth usage on smartphones and tablets.
+### 10. Mobile Browser Optimization
+Optimized the interface layout for mobile browsers, making it user-friendly on small screens.
+
+---
+
+## 📱 Apps Used
+
+Here’s a list of Android applications (APKs) used during development and testing:
+
+| Application      | Purpose                                 |
+|------------------|------------------------------------------|
+| **ESP8266 Loader** | Upload `.bin` firmware to ESP8266 via OTG/serial |
+| **GitHub (App)**  | Manage repository, trigger actions      |
+| **Google Chrome** | Access web interface & OTA update page  |
+| **Notepad**       | Quick edits and notes during coding     |
 
 ---
 
 ## 📦 Features
 
-- Build and download firmware `.bin` using GitHub Actions
-- Perform OTA firmware updates via web browser
-- Control a servo motor with a web slider
-- Toggle the built-in LED through the browser
-- View IP address and WiFi signal strength
-- Responsive UI that works on mobile and desktop
+- ✅ Firmware compilation via GitHub Actions
+- ✅ OTA firmware update via browser
+- ✅ Servo control with web slider
+- ✅ Built-in LED toggle with switch
+- ✅ Display IP address and WiFi RSSI
+- ✅ Fully responsive interface with Bootstrap
 
 ---
 
-## 🔮 Future Improvements (Optional)
+## 🔮 Future Enhancements
 
-- Save the last servo position in EEPROM
-- Automatically reboot after successful OTA update
-- Add authentication/login for security
-- Implement dark mode theme
-- Add activity logs and monitoring
+- Save last known servo position in EEPROM
+- Auto-reboot after OTA update
+- Add password protection for OTA page
+- Add dark mode support
+- Log servo & LED activity to memory or server
 
 ---
 
 ## 👤 Author
 
-This project was created by **Karim Roy Tampubolon**.
+Developed by **Karim Roy Tampubolon**  
+Assisted by **ChatGPT – OpenAI**
 
 ---
 
 ## 🗓️ Timeline Summary
 
-- **July 1, 2025**: Initial setup with GitHub Actions and OTA functionality
-- **July 1–2, 2025**: Added servo, LED control, and responsive web UI
-- **July 3, 2025**: Final polish and documentation
+- **July 1, 2025**: Setup GitHub Actions, OTA server, initial compile
+- **July 1–2, 2025**: Implemented servo, LED toggle, UI, mobile view
+- **July 3, 2025**: Final polish, network info, changelog, documentation
 
 ---
 
-Thanks for reading and exploring this project.  
-Feel free to use it as a learning reference or a base for your own IoT development with ESP8266.
+Thanks for exploring this project!  
+Feel free to use or modify it for your own IoT learning and development.

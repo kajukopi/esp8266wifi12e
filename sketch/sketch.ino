@@ -42,8 +42,8 @@ void handleRoot() {
 void handleSetServo() {
   if (server.hasArg("percent")) {
     int percent = server.arg("percent").toInt();
-    int angle = map(percent, 0, 100, 0, 170); // 0–100% → 0–170°
-    myServo.write(angle);
+    int micro = map(percent, 0, 100, 500, 2500); // biasanya 1000–2000, bisa diperluas
+    myServo.writeMicroseconds(micro);
     server.send(200, "text/plain", "OK");
   } else {
     server.send(400, "text/plain", "Missing 'percent' parameter");

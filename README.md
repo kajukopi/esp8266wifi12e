@@ -76,7 +76,7 @@ The entire web interface was optimized for mobile browsers, ensuring smooth usag
 
 ## 👤 Author
 
-This project was created by **Karim Roy Tampubolon**, in collaboration with ChatGPT – OpenAI.
+This project was created by **Karim Roy Tampubolon**.
 
 ---
 

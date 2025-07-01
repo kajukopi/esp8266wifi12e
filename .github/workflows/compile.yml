@@ -1,4 +1,4 @@
-name: Compile for NodeMCU v1.0 ESP8266
+name: Build and Push Firmware for NodeMCU v1.0 (ESP8266 12E)
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,8 +24,24 @@ jobs:
           sketch-paths: |
             - sketch
 
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware
-          path: firmware.bin
+      - name: Save firmware to build/
+        run: |
+          mkdir -p build
+          BIN=$(find .arduino-build -name "*.bin" | head -n 1)
+          echo "Found binary: $BIN"
+          cp "$BIN" build/firmware.bin
+
+      - name: Configure git for push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push firmware
+        run: |
+          git add build/firmware.bin
+          git commit -m "🤖 Auto: Build firmware.bin for NodeMCU" || echo "No changes to commit"
+          git push
+        env:
+          # This token is automatically provided by GitHub Actions
+          # It has permission to push to the same repo
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

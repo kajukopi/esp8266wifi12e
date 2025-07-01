@@ -23,12 +23,6 @@ jobs:
           sketch-paths: |
             - sketch
 
-      - name: Find and rename .bin file
-        run: |
-          BIN=$(find .arduino-build -name "*.bin" | head -n 1)
-          echo "Found binary: $BIN"
-          cp "$BIN" firmware.bin
-
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:

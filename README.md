@@ -92,7 +92,6 @@ Here’s a list of Android applications (APKs) used during development and testi
 ## 👤 Author
 
 Developed by **Karim Roy Tampubolon**  
-Assisted by **ChatGPT – OpenAI**
 
 ---
 

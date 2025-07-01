@@ -1,36 +1,37 @@
-# ðŸ“˜ ESP8266 Web Server OTA + Servo Control - Changelog
+```markdown
+# 📘 ESP8266 Web Server OTA + Servo Control - Changelog
 
 Proyek ini berkembang secara bertahap dari nol melalui interaksi dengan ChatGPT, dimulai dari setup GitHub Actions hingga tercipta sistem OTA + kontrol servo dan LED berbasis browser.
 
 ---
 
-## ðŸŸ¢ Tahap Awal
+## 🟢 Tahap Awal
 **Tujuan:**  
 Upload file `.bin` ke Lolin NodeMCU v1.0 (ESP8266 12E) via GitHub Actions + OTA
 
 **Struktur proyek awal:**
 ```
 .
-â”œâ”€â”€ sketch/
-â”‚   â””â”€â”€ sketch.ino
-â””â”€â”€ .github/
-    â””â”€â”€ workflows/
-        â””â”€â”€ compile.yml
+├── sketch/
+│   └── sketch.ino
+└── .github/
+    └── workflows/
+        └── compile.yml
 ```
 
 ---
 
-## ðŸ› ï¸ Tahap 1 â€“ GitHub Actions Setup
+## 🛠️ Tahap 1 – GitHub Actions Setup
 
-### âœ… Setup Arduino CLI
+### ✅ Setup Arduino CLI dan ESP8266 Core
 ```yaml
-- name: Install ESP8266 Core
+- name: Setup Arduino CLI
   run: |
     arduino-cli core update-index
     arduino-cli core install esp8266:esp8266
 ```
 
-### âœ… Compile + Upload Artifact
+### ✅ Compile + Upload Artifact
 ```yaml
 - name: Compile sketch
   run: |
@@ -45,9 +46,9 @@ Upload file `.bin` ke Lolin NodeMCU v1.0 (ESP8266 12E) via GitHub Actions + OTA
 
 ---
 
-## ðŸ“… Tahap 2 â€“ Rename Firmware Otomatis dengan Tanggal
+## 📅 Tahap 2 – Rename Firmware Otomatis dengan Tanggal
 
-### âœ… Tambahkan tanggal ke nama file:
+### ✅ Menambahkan langkah tanggal dan rename nama file:
 ```yaml
 - name: Get date
   id: date
@@ -59,9 +60,9 @@ Upload file `.bin` ke Lolin NodeMCU v1.0 (ESP8266 12E) via GitHub Actions + OTA
 
 ---
 
-## ðŸŒ Tahap 3 â€“ Web Server + OTA Dasar
+## 🌐 Tahap 3 – Web Server + OTA Dasar
 
-### âœ… Tambahkan OTA + HTTP Update Server:
+### ✅ Tambahkan OTA + HTTP Update Server:
 ```cpp
 ESP8266HTTPUpdateServer httpUpdater;
 ArduinoOTA.begin();
@@ -70,9 +71,9 @@ httpUpdater.setup(&server);
 
 ---
 
-## âš™ï¸ Tahap 4 â€“ Kontrol Servo via Browser Slider
+## ⚙️ Tahap 4 – Kontrol Servo via Browser Slider
 
-### âœ… Tambahkan Servo pada Pin D5:
+### ✅ Tambahkan Servo pada Pin D5:
 ```cpp
 Servo myServo;
 myServo.attach(D5);
@@ -84,16 +85,16 @@ void handleSetServo() {
 }
 ```
 
-### âœ… Web UI:
+### ✅ Web UI:
 ```html
 <input type="range" id="slider" min="0" max="100" oninput="updateSlider(this.value)">
 ```
 
 ---
 
-## ðŸ”§ Tahap 5 â€“ Servo Hanya Bergerak 90Â°
+## 🔧 Tahap 5 – Servo Hanya Bergerak 90°
 
-### âœ… Solusi: Gunakan `writeMicroseconds()`:
+### ✅ Solusi: Gunakan `writeMicroseconds()`:
 ```cpp
 int micro = map(percent, 0, 100, 500, 2500);
 myServo.writeMicroseconds(micro);
@@ -101,9 +102,9 @@ myServo.writeMicroseconds(micro);
 
 ---
 
-## ðŸŽ¨ Tahap 6 â€“ UI Lebih Rapi dengan Bootstrap
+## 🎨 Tahap 6 – UI Lebih Rapi dengan Bootstrap
 
-### âœ… Integrasi Bootstrap + Tombol OTA:
+### ✅ Integrasi Bootstrap + Tombol OTA:
 ```html
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <a href="/update" class="btn btn-primary">Firmware Update</a>
@@ -111,24 +112,24 @@ myServo.writeMicroseconds(micro);
 
 ---
 
-## ðŸ’¡ Tahap 7 â€“ Toggle LED
+## 💡 Tahap 7 – Toggle LED
 
-### âœ… Tambahkan kontrol LED:
+### ✅ Tambahkan kontrol LED:
 ```cpp
 const int ledPin = LED_BUILTIN;
 digitalWrite(ledPin, (state == "on") ? LOW : HIGH); // Active LOW
 ```
 
-### âœ… Web UI:
+### ✅ Web UI:
 ```html
 <input type="checkbox" onchange="toggleLED(this.checked)">
 ```
 
 ---
 
-## ðŸ“± Tahap 8 â€“ Mobile Responsive + Info IP/WiFi
+## 📱 Tahap 8 – Mobile Responsive + Info IP/WiFi
 
-### âœ… Tampilkan IP & Sinyal:
+### ✅ Tampilkan IP & Sinyal:
 ```cpp
 <p><strong>IP Address:</strong> %IP%</p>
 <p><strong>WiFi Strength:</strong> %SIGNAL%</p>
@@ -141,28 +142,29 @@ String getSignalStrength() {
 
 ---
 
-## âœ… Final Code Fitur Lengkap
+## ✅ Final Code Fitur Lengkap
 
 | Fitur                  | Status |
 |------------------------|--------|
-| OTA Update via Web     | âœ…     |
-| Servo Slider Control   | âœ…     |
-| LED Toggle Switch      | âœ…     |
-| IP Address Display     | âœ…     |
-| WiFi Signal Display    | âœ…     |
-| Responsive UI (Mobile) | âœ…     |
+| OTA Update via Web     | ✅     |
+| Servo Slider Control   | ✅     |
+| LED Toggle Switch      | ✅     |
+| IP Address Display     | ✅     |
+| WiFi Signal Display    | ✅     |
+| Responsive UI (Mobile) | ✅     |
 
 ---
 
-## ðŸ”® Rencana Selanjutnya (Opsional)
+## 🔮 Rencana Selanjutnya (Opsional)
 
-- ðŸ’¾ Simpan posisi terakhir servo (EEPROM)
-- ðŸ” Reboot otomatis setelah OTA update
-- ðŸ“ Logging aktivitas (servo & LED)
-- ðŸŒ Scan & pilih WiFi via Web
-- ðŸŒ™ Dark mode UI toggle
+- 💾 Simpan posisi terakhir servo (EEPROM)
+- 🔁 Reboot otomatis setelah OTA update
+- 📝 Logging aktivitas (servo & LED)
+- 🌐 Scan & pilih WiFi via Web
+- 🌙 Dark mode UI toggle
 
 ---
 
-ðŸ› ï¸ Dibuat bersama ChatGPT â€“ OpenAI  
-ðŸ“† Progress: Dari 1 Juli 2025 sampai tuntas  
+🛠️ Dibuat bersama ChatGPT – OpenAI  
+📆 Progress: Dari 1 Juli 2025 sampai tuntas
+```

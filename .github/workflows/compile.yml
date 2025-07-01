@@ -1,4 +1,4 @@
-name: Build and Push Firmware for NodeMCU v1.0 (ESP8266 12E)
+name: Build and Push Timestamped Firmware for NodeMCU
 
 on:
   push:
@@ -11,8 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Get sketch name and date
+        id: vars
+        run: |
+          SKETCH_FILE=$(find sketch -name '*.ino' | head -n 1)
+          SKETCH_NAME=$(basename "$SKETCH_FILE" .ino)
+          DATE=$(date +%F)
+          echo "SKETCH_NAME=$SKETCH_NAME" >> $GITHUB_ENV
+          echo "DATE=$DATE" >> $GITHUB_ENV
 
       - name: Compile sketch
         uses: arduino/compile-sketches@v1
@@ -24,24 +33,26 @@ jobs:
           sketch-paths: |
             - sketch
 
-      - name: Save firmware to build/
+      - name: Find and copy firmware to build/
         run: |
           mkdir -p build
-          BIN=$(find .arduino-build -name "*.bin" | head -n 1)
-          echo "Found binary: $BIN"
-          cp "$BIN" build/firmware.bin
+          BIN=$(find ./__sketch-build -name '*.bin' | head -n 1)
+          OUTFILE="build/firmware_${SKETCH_NAME}_${DATE}.bin"
+          echo "Copying $BIN to $OUTFILE"
+          cp "$BIN" "$OUTFILE"
 
-      - name: Configure git for push
+      - name: Show contents of build folder
+        run: ls -lh build
+
+      - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Commit and push firmware
         run: |
-          git add build/firmware.bin
-          git commit -m "🤖 Auto: Build firmware.bin for NodeMCU" || echo "No changes to commit"
+          git add build/
+          git commit -m "🤖 Auto: Build firmware for $SKETCH_NAME on $DATE" || echo "No changes to commit"
           git push
         env:
-          # This token is automatically provided by GitHub Actions
-          # It has permission to push to the same repo
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

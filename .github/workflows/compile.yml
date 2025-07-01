@@ -37,5 +37,5 @@ jobs:
     - name: 🚀 Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
-        name: firmware
+        name: firmware-${{ steps.date.outputs.today }}
         path: build/sketch.ino.bin

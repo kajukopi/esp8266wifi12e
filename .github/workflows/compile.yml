@@ -1,9 +1,8 @@
-name: Build and Push Timestamped Firmware for NodeMCU
+name: Compile sketch
 
 on:
   push:
-    paths:
-      - 'sketch/**.ino'
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -11,54 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Extract sketch name and date
-        run: |
-          SKETCH_FILE=$(basename $(find sketch -name '*.ino' | head -n 1))
-          SKETCH_NAME="${SKETCH_FILE%.*}"
-          DATE=$(date +%F)
-          echo "SKETCH_NAME=$SKETCH_NAME" >> $GITHUB_ENV
-          echo "DATE=$DATE" >> $GITHUB_ENV
+    - name: Set up Arduino CLI
+      uses: arduino/setup-arduino-cli@v1
 
-      - name: Compile sketch
-        uses: arduino/compile-sketches@v1
-        with:
-          fqbn: esp8266:esp8266:nodemcuv2
-          platforms: |
-            - name: esp8266:esp8266
-              source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-          sketch-paths: |
-            - sketch
+    - name: Install ESP8266 core
+      run: |
+        arduino-cli core update-index
+        arduino-cli core install esp8266:esp8266
 
-      - name: Find and copy firmware.bin
-        run: |
-          mkdir -p build
-          echo "📁 Searching inside __sketch-build:"
-          find __sketch-build -type f
-          
-          BIN=$(find __sketch-build -type f -name '*.bin' | grep '\.bin$' | head -n 1)
-          if [ -z "$BIN" ]; then
-            echo "❌ Firmware .bin file not found!"
-            exit 1
-          fi
-          OUTFILE="build/firmware_${SKETCH_NAME}_${DATE}.bin"
-          echo "✅ Copying $BIN → $OUTFILE"
-          cp "$BIN" "$OUTFILE"
+    - name: Install dependencies
+      run: |
+        arduino-cli lib install "ESP8266WiFi"
+        arduino-cli lib install "ESP8266WebServer"
+        arduino-cli lib install "ESP8266HTTPUpdateServer"
+        arduino-cli lib install "ArduinoOTA"
 
-      - name: Show contents of build folder
-        run: ls -lh build
+    - name: Compile sketch
+      run: |
+        arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 sketch --output-dir build
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Commit and push firmware
-        run: |
-          git add build/
-          git commit -m "🤖 Auto: Build firmware for $SKETCH_NAME on $DATE" || echo "No changes to commit"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware
+        path: build/sketch.ino.bin

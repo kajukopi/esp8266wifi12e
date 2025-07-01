@@ -1,170 +1,92 @@
-```markdown
-# 📘 ESP8266 Web Server OTA + Servo Control - Changelog
+# 🚀 ESP8266 Web OTA + Servo + LED Control
 
-Proyek ini berkembang secara bertahap dari nol melalui interaksi dengan ChatGPT, dimulai dari setup GitHub Actions hingga tercipta sistem OTA + kontrol servo dan LED berbasis browser.
-
----
-
-## 🟢 Tahap Awal
-**Tujuan:**  
-Upload file `.bin` ke Lolin NodeMCU v1.0 (ESP8266 12E) via GitHub Actions + OTA
-
-**Struktur proyek awal:**
-```
-.
-├── sketch/
-│   └── sketch.ino
-└── .github/
-    └── workflows/
-        └── compile.yml
-```
+This project is a complete documentation of building a responsive web-based control system for a Lolin NodeMCU V1.0 (ESP8266 12E), featuring OTA (Over-the-Air) firmware updates and browser-based device control including a servo and built-in LED.
 
 ---
 
-## 🛠️ Tahap 1 – GitHub Actions Setup
+## 📌 Project Objectives
 
-### ✅ Setup Arduino CLI dan ESP8266 Core
-```yaml
-- name: Setup Arduino CLI
-  run: |
-    arduino-cli core update-index
-    arduino-cli core install esp8266:esp8266
-```
-
-### ✅ Compile + Upload Artifact
-```yaml
-- name: Compile sketch
-  run: |
-    arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 sketch --output-dir build
-
-- name: Upload artifact
-  uses: actions/upload-artifact@v4
-  with:
-    name: firmware
-    path: build/sketch.ino.bin
-```
+- Automate firmware `.bin` upload to ESP8266 using GitHub Actions.
+- Enable OTA firmware updates through a browser interface.
+- Control a servo motor using a web slider.
+- Toggle the onboard LED from the web interface.
+- Display the ESP8266’s IP address and WiFi signal strength.
+- Build a responsive and mobile-friendly web interface using Bootstrap.
 
 ---
 
-## 📅 Tahap 2 – Rename Firmware Otomatis dengan Tanggal
+## 🛠️ Development Process
 
-### ✅ Menambahkan langkah tanggal dan rename nama file:
-```yaml
-- name: Get date
-  id: date
-  run: echo "today=$(date +%F)" >> "$GITHUB_OUTPUT"
+### 1. Project Initialization
+The project started with a basic structure containing the main Arduino sketch file (`sketch.ino`) and a GitHub Actions workflow (`compile.yml`) to automate builds.
 
-- name: Rename file
-  run: mv build/sketch.ino.bin build/firmware-${{ steps.date.outputs.today }}.bin
-```
+### 2. GitHub Actions Setup
+Configured `arduino-cli` in GitHub Actions to:
+- Add the ESP8266 board manager URL.
+- Install the ESP8266 core.
+- Compile the Arduino sketch.
+- Upload the resulting `.bin` file as an artifact.
 
----
+### 3. Automated Firmware Naming
+The firmware file was renamed dynamically to include the build date, making it easier to track and manage.
 
-## 🌐 Tahap 3 – Web Server + OTA Dasar
+### 4. Basic Web Server & OTA Integration
+The ESP8266 was configured to host a web server that allows OTA updates using `ESP8266HTTPUpdateServer` and `ArduinoOTA`.
 
-### ✅ Tambahkan OTA + HTTP Update Server:
-```cpp
-ESP8266HTTPUpdateServer httpUpdater;
-ArduinoOTA.begin();
-httpUpdater.setup(&server);
-```
+### 5. Adding Servo Control
+A servo was connected to pin D5 and controlled via an HTML range slider from the web interface.
 
----
+### 6. Improving Servo Range
+Initially, the servo only rotated 90°. The control logic was adjusted to expand the range up to ~170° with better responsiveness.
 
-## ⚙️ Tahap 4 – Kontrol Servo via Browser Slider
+### 7. Web Interface Enhancement
+The user interface was improved using Bootstrap, making it clean, responsive, and easy to use, including navigation buttons and spacing.
 
-### ✅ Tambahkan Servo pada Pin D5:
-```cpp
-Servo myServo;
-myServo.attach(D5);
+### 8. LED Toggle Feature
+A toggle switch was added to control the built-in LED via the web interface.
 
-void handleSetServo() {
-  int percent = server.arg("percent").toInt();
-  int angle = map(percent, 0, 100, 0, 170);
-  myServo.write(angle);
-}
-```
+### 9. Network Info Display
+The device’s IP address and WiFi signal strength were added to the web UI for user reference.
 
-### ✅ Web UI:
-```html
-<input type="range" id="slider" min="0" max="100" oninput="updateSlider(this.value)">
-```
+### 10. Mobile-Friendly Design
+The entire web interface was optimized for mobile browsers, ensuring smooth usage on smartphones and tablets.
 
 ---
 
-## 🔧 Tahap 5 – Servo Hanya Bergerak 90°
+## 📦 Features
 
-### ✅ Solusi: Gunakan `writeMicroseconds()`:
-```cpp
-int micro = map(percent, 0, 100, 500, 2500);
-myServo.writeMicroseconds(micro);
-```
-
----
-
-## 🎨 Tahap 6 – UI Lebih Rapi dengan Bootstrap
-
-### ✅ Integrasi Bootstrap + Tombol OTA:
-```html
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<a href="/update" class="btn btn-primary">Firmware Update</a>
-```
+- Build and download firmware `.bin` using GitHub Actions
+- Perform OTA firmware updates via web browser
+- Control a servo motor with a web slider
+- Toggle the built-in LED through the browser
+- View IP address and WiFi signal strength
+- Responsive UI that works on mobile and desktop
 
 ---
 
-## 💡 Tahap 7 – Toggle LED
+## 🔮 Future Improvements (Optional)
 
-### ✅ Tambahkan kontrol LED:
-```cpp
-const int ledPin = LED_BUILTIN;
-digitalWrite(ledPin, (state == "on") ? LOW : HIGH); // Active LOW
-```
-
-### ✅ Web UI:
-```html
-<input type="checkbox" onchange="toggleLED(this.checked)">
-```
+- Save the last servo position in EEPROM
+- Automatically reboot after successful OTA update
+- Add authentication/login for security
+- Implement dark mode theme
+- Add activity logs and monitoring
 
 ---
 
-## 📱 Tahap 8 – Mobile Responsive + Info IP/WiFi
+## 👤 Author
 
-### ✅ Tampilkan IP & Sinyal:
-```cpp
-<p><strong>IP Address:</strong> %IP%</p>
-<p><strong>WiFi Strength:</strong> %SIGNAL%</p>
-
-String getSignalStrength() {
-  int32_t rssi = WiFi.RSSI();
-  return String(rssi) + " dBm (Good/Excellent/etc)";
-}
-```
+This project was created by **Karim Roy Tampubolon**, in collaboration with ChatGPT – OpenAI.
 
 ---
 
-## ✅ Final Code Fitur Lengkap
+## 🗓️ Timeline Summary
 
-| Fitur                  | Status |
-|------------------------|--------|
-| OTA Update via Web     | ✅     |
-| Servo Slider Control   | ✅     |
-| LED Toggle Switch      | ✅     |
-| IP Address Display     | ✅     |
-| WiFi Signal Display    | ✅     |
-| Responsive UI (Mobile) | ✅     |
+- **July 1, 2025**: Initial setup with GitHub Actions and OTA functionality
+- **July 1–2, 2025**: Added servo, LED control, and responsive web UI
+- **July 3, 2025**: Final polish and documentation
 
 ---
 
-## 🔮 Rencana Selanjutnya (Opsional)
-
-- 💾 Simpan posisi terakhir servo (EEPROM)
-- 🔁 Reboot otomatis setelah OTA update
-- 📝 Logging aktivitas (servo & LED)
-- 🌐 Scan & pilih WiFi via Web
-- 🌙 Dark mode UI toggle
-
----
-
-🛠️ Dibuat bersama ChatGPT – OpenAI  
-📆 Progress: Dari 1 Juli 2025 sampai tuntas
-```
+Thanks for reading and exploring this project.  
+Feel free to use it as a learning reference or a base for your own IoT development with ESP8266.

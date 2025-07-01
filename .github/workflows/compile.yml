@@ -14,15 +14,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract sketch info
-        id: vars
+      - name: Extract sketch name and date
         run: |
-          SKETCH_PATH=$(find sketch -name '*.ino' | head -n 1)
-          SKETCH_FILE=$(basename "$SKETCH_PATH")
+          SKETCH_FILE=$(basename $(find sketch -name '*.ino' | head -n 1))
           SKETCH_NAME="${SKETCH_FILE%.*}"
           DATE=$(date +%F)
           echo "SKETCH_NAME=$SKETCH_NAME" >> $GITHUB_ENV
-          echo "SKETCH_PATH=$SKETCH_PATH" >> $GITHUB_ENV
           echo "DATE=$DATE" >> $GITHUB_ENV
 
       - name: Compile sketch
@@ -33,7 +30,7 @@ jobs:
             - name: esp8266:esp8266
               source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
           sketch-paths: |
-            - ${{ env.SKETCH_PATH }}
+            - sketch  # ✅ Folder only, not full file path
 
       - name: Find and copy firmware.bin
         run: |

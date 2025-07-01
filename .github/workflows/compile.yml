@@ -30,12 +30,15 @@ jobs:
             - name: esp8266:esp8266
               source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
           sketch-paths: |
-            - sketch  # ✅ Folder only, not full file path
+            - sketch
 
       - name: Find and copy firmware.bin
         run: |
           mkdir -p build
-          BIN=$(find . -type f -name '*.bin' | head -n 1)
+          echo "📁 Searching inside __sketch-build:"
+          find __sketch-build -type f
+          
+          BIN=$(find __sketch-build -type f -name '*.bin' | grep '\.bin$' | head -n 1)
           if [ -z "$BIN" ]; then
             echo "❌ Firmware .bin file not found!"
             exit 1

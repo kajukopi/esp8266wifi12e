@@ -3,8 +3,8 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <ArduinoOTA.h>
 
-const char* ssid = "your-SSID";
-const char* password = "your-PASSWORD";
+const char* ssid = "karimroy";
+const char* password = "09871234";
 
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
@@ -40,4 +40,4 @@ void loop() {
   ArduinoOTA.handle();
 }
 
-// Edit 1
+// Edit 2

@@ -14,13 +14,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get sketch name and date
+      - name: Extract sketch info
         id: vars
         run: |
-          SKETCH_FILE=$(find sketch -name '*.ino' | head -n 1)
-          SKETCH_NAME=$(basename "$SKETCH_FILE" .ino)
+          SKETCH_PATH=$(find sketch -name '*.ino' | head -n 1)
+          SKETCH_FILE=$(basename "$SKETCH_PATH")
+          SKETCH_NAME="${SKETCH_FILE%.*}"
           DATE=$(date +%F)
           echo "SKETCH_NAME=$SKETCH_NAME" >> $GITHUB_ENV
+          echo "SKETCH_PATH=$SKETCH_PATH" >> $GITHUB_ENV
           echo "DATE=$DATE" >> $GITHUB_ENV
 
       - name: Compile sketch
@@ -31,20 +33,24 @@ jobs:
             - name: esp8266:esp8266
               source-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
           sketch-paths: |
-            - sketch
+            - ${{ env.SKETCH_PATH }}
 
-      - name: Find and copy firmware to build/
+      - name: Find and copy firmware.bin
         run: |
           mkdir -p build
-          BIN=$(find ./__sketch-build -name '*.bin' | head -n 1)
+          BIN=$(find . -type f -name '*.bin' | head -n 1)
+          if [ -z "$BIN" ]; then
+            echo "❌ Firmware .bin file not found!"
+            exit 1
+          fi
           OUTFILE="build/firmware_${SKETCH_NAME}_${DATE}.bin"
-          echo "Copying $BIN to $OUTFILE"
+          echo "✅ Copying $BIN → $OUTFILE"
           cp "$BIN" "$OUTFILE"
 
       - name: Show contents of build folder
         run: ls -lh build
 
-      - name: Configure git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

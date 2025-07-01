@@ -1,38 +1,41 @@
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPUpdateServer.h>
+#include <ArduinoOTA.h>
 
-// Replace with your WiFi credentials
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+const char* ssid = "your-SSID";
+const char* password = "your-PASSWORD";
 
-// Built-in LED on NodeMCU is on GPIO2 (D4)
-const int ledPin = 2;
+ESP8266WebServer server(80);
+ESP8266HTTPUpdateServer httpUpdater;
 
 void setup() {
   Serial.begin(115200);
-  delay(100);
-
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH); // LED off initially (inverted logic)
-
-  Serial.println();
-  Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid, password);
-
+  Serial.println("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(1000);
     Serial.print(".");
   }
 
-  Serial.println();
-  Serial.print("Connected! IP address: ");
+  Serial.println("");
+  Serial.println("Connected!");
+  Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
+
+  httpUpdater.setup(&server);
+  server.on("/", HTTP_GET, []() {
+    server.send(200, "text/html", R"rawliteral(
+      <h1>ESP8266 OTA Web Updater</h1>
+      <p><a href="/update">Update Firmware</a></p>
+    )rawliteral");
+  });
+
+  server.begin();
+  ArduinoOTA.begin(); // Optional OTA via Arduino IDE
 }
 
 void loop() {
-  digitalWrite(ledPin, LOW); // LED on
-  delay(1000);
-  digitalWrite(ledPin, HIGH); // LED off
-  delay(1000);
+  server.handleClient();
+  ArduinoOTA.handle();
 }
-
-// Edit File 10

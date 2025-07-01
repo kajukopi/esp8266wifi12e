@@ -34,8 +34,16 @@ jobs:
           sketch \
           --output-dir build
 
+    - name: 📅 Get date
+      id: date
+      run: echo "today=$(date +%F)" >> "$GITHUB_OUTPUT"
+
+    - name: 📂 Rename firmware with date
+      run: |
+        mv build/sketch.ino.bin build/firmware-${{ steps.date.outputs.today }}.bin
+
     - name: 🚀 Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ steps.date.outputs.today }}
-        path: build/sketch.ino.bin
+        path: build/firmware-*.bin

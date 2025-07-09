@@ -1,81 +1,177 @@
-## 📂 Penjelasan Folder `sketch/`
+# 📄 Penjelasan Langkah demi Langkah: `sketch.ino`
 
-Folder `sketch/` berisi kode utama proyek ESP8266, yang akan dikompilasi menjadi firmware `.bin` melalui workflow GitHub Actions. File `.ino` di dalamnya adalah inti dari program yang akan di-flash ke NodeMCU ESP8266.
+File `sketch.ino` adalah inti dari proyek ESP8266 ini. Program ini bertanggung jawab untuk:
 
----
-
-### 📁 Daftar Isi
-
-| File | Deskripsi |
-|------|-----------|
-| [`sketch.ino`](./sketch.ino) | File utama Arduino sketch, berisi kode program untuk ESP8266. |
-| [`index.html`](./index.html) | Halaman web lokal yang ditampilkan oleh web server ESP8266. |
-| [`style.css`](./style.css) | File CSS untuk mempercantik tampilan halaman HTML. |
-| [`reboot.html`](./reboot.html) | Halaman web yang muncul saat ESP8266 direstart. |
-| [`upload.html`](./upload.html) | Halaman untuk mengunggah firmware baru (OTA update). |
-| [`upload.css`](./upload.css) | Tampilan khusus untuk halaman upload firmware. |
-| [`ota.html`](./ota.html) | Halaman utama untuk fitur OTA (Over-the-Air) upload firmware. |
-| [`error.html`](./error.html) | Halaman error default jika ada kesalahan akses. |
+- Menghubungkan ESP8266 ke WiFi
+- Menjalankan web server lokal
+- Menyediakan halaman web untuk OTA dan kontrol
+- Mendukung upload firmware langsung dari browser (OTA)
+- Merespons permintaan pengguna melalui berbagai endpoint URL
 
 ---
 
-### 📄 Penjelasan Setiap File
+## 🧩 1. Import Library
 
-#### `sketch.ino`
-Program utama Arduino yang:
-- Menghubungkan ESP8266 ke jaringan WiFi.
-- Membuat web server lokal.
-- Menyediakan halaman web interaktif untuk mengontrol LED dan servo.
-- Mendukung upload firmware via browser (OTA update).
+```cpp
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+```
 
-#### `index.html`
-- Halaman web default yang ditampilkan ketika IP ESP8266 diakses.
-- Berisi kontrol UI seperti tombol dan slider untuk mengendalikan perangkat seperti LED dan servo.
-
-#### `style.css`
-- File gaya (CSS) untuk mempercantik tampilan halaman `index.html`.
-- Mengatur layout, warna, font, dan animasi UI.
-
-#### `reboot.html`
-- Halaman sederhana yang ditampilkan ketika ESP8266 selesai restart.
-- Memberikan informasi atau animasi bahwa device sedang reboot.
-
-#### `upload.html`
-- Halaman yang memungkinkan pengguna untuk memilih dan mengunggah file `.bin` firmware baru langsung lewat browser.
-- Digunakan untuk fitur OTA update (update tanpa kabel).
-
-#### `upload.css`
-- Gaya tampilan untuk halaman `upload.html`.
-- Mengatur agar halaman upload tampil simpel dan responsif.
-
-#### `ota.html`
-- Halaman utama untuk fitur OTA update.
-- Biasanya digunakan untuk mengarahkan pengguna ke proses upload firmware.
-
-#### `error.html`
-- Halaman fallback jika halaman tidak ditemukan (`404`), atau ada error lain saat akses web server.
-- Meningkatkan UX dengan memberikan informasi kesalahan yang lebih jelas.
+Library ini digunakan untuk:
+- Menghubungkan ESP8266 ke jaringan WiFi
+- Menjalankan web server berbasis HTTP
 
 ---
 
-### 🔧 Catatan Tambahan
+## 📶 2. Konfigurasi WiFi
 
-- Semua file HTML dan CSS ini akan disajikan langsung dari ESP8266 melalui server lokal berbasis `ESP8266WebServer`.
-- File HTML akan dibaca dari `PROGMEM` (memori flash) dan ditampilkan ke browser pengguna.
-- Folder `sketch/` ini adalah tempat yang dibaca oleh `arduino-cli compile` saat proses build di GitHub Actions.
+```cpp
+const char* ssid = "your-ssid";
+const char* password = "your-password";
+```
 
----
-
-### 📦 Tips
-
-- Pastikan semua file sudah direferensikan dengan benar di dalam `sketch.ino` menggunakan `server.on()` dan `server.send()`.
-- Gunakan tool seperti `ESPAsyncWebServer` atau `ESP8266WebServer` untuk performa dan kestabilan yang lebih baik.
-- Untuk menyimpan HTML/CSS ke dalam `PROGMEM`, kamu bisa menggunakan macro `F()` atau konversi ke string header (`.h`).
+SSID dan password WiFi didefinisikan secara hardcoded agar ESP8266 bisa terhubung otomatis saat dinyalakan.
 
 ---
 
-### 🔗 Referensi
+## 🌐 3. Inisialisasi Web Server
 
-- [ESP8266WebServer Library](https://arduino-esp8266.readthedocs.io/en/latest/esp8266webserver.html)
-- [Arduino OTA Update](https://arduino-esp8266.readthedocs.io/en/latest/ota_updates/readme.html)
-- [FS Upload Tool (SPIFFS)](https://randomnerdtutorials.com/install-esp8266-filesystem-uploader-arduino-ide/)
+```cpp
+ESP8266WebServer server(80);
+```
+
+Membuat server lokal pada port 80 (port HTTP standar). Semua permintaan dari browser akan ditangani oleh objek `server`.
+
+---
+
+## 🛠️ 4. Fungsi `setup()`
+
+```cpp
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+  }
+  server.on("/", ...);
+  server.on("/upload", ...);
+  server.on("/reboot", ...);
+  server.on("/ota", ...);
+  server.onNotFound(...);
+  server.begin();
+}
+```
+
+### Penjelasan:
+- `Serial.begin(115200)`: Memulai komunikasi serial.
+- `WiFi.begin(...)`: Menghubungkan ke WiFi.
+- `server.on(...)`: Menentukan routing untuk halaman tertentu.
+- `server.begin()`: Menyalakan server agar mulai menerima permintaan HTTP.
+
+---
+
+## 🔁 5. Fungsi `loop()`
+
+```cpp
+void loop() {
+  server.handleClient();
+}
+```
+
+Server akan terus mengecek apakah ada permintaan masuk dari client (browser) dan meresponsnya sesuai rute yang sudah didefinisikan.
+
+---
+
+## 📁 6. Routing Web Server
+
+```cpp
+server.on("/", []() {
+  server.send(200, "text/html", index_html);
+});
+```
+
+### Rute Penting:
+| Endpoint     | Fungsi                                      |
+|--------------|---------------------------------------------|
+| `/`          | Halaman utama (`index.html`)                |
+| `/upload`    | Halaman upload firmware (`upload.html`)     |
+| `/reboot`    | Menampilkan halaman reboot lalu restart     |
+| `/ota`       | Menampilkan halaman OTA                     |
+| *(lainnya)*  | Menampilkan `error.html` (jika tidak cocok) |
+
+---
+
+## 💡 7. Halaman HTML dari PROGMEM
+
+Semua halaman web disimpan di flash memory menggunakan `PROGMEM`, lalu dikirim ke browser menggunakan:
+
+```cpp
+server.send(200, "text/html", index_html);
+```
+
+---
+
+## 🔁 8. OTA Update
+
+Rute `/upload` mengaktifkan fitur Over-The-Air Update. Firmware `.bin` dapat diunggah melalui halaman web, dan ESP akan:
+
+1. Menyimpan file sementara
+2. Me-restart setelah upload sukses
+
+---
+
+## 🧠 9. Rute Reboot
+
+```cpp
+server.on("/reboot", []() {
+  server.send(200, "text/html", reboot_html);
+  delay(3000);
+  ESP.restart();
+});
+```
+
+Ketika pengguna mengakses `/reboot`, halaman `reboot.html` ditampilkan lalu ESP akan restart otomatis setelah 3 detik.
+
+---
+
+## 📌 10. Penanganan Error
+
+```cpp
+server.onNotFound([]() {
+  server.send(404, "text/html", error_html);
+});
+```
+
+Jika pengguna mengakses URL yang tidak dikenali, maka server akan menampilkan halaman `error.html`.
+
+---
+
+## 📦 11. Struktur Folder Terkait
+
+```
+sketch/
+├── sketch.ino
+├── index.html
+├── style.css
+├── upload.html
+├── upload.css
+├── reboot.html
+├── ota.html
+├── error.html
+```
+
+---
+
+## 📌 Catatan Penting
+
+- Semua file `.html` akan disimpan sebagai `const char[]` di file header `.h` dan di-serve dari `PROGMEM`
+- Tidak menggunakan SPIFFS atau LittleFS — hanya `PROGMEM`
+- Kompatibel dengan board: **NodeMCU ESP8266 v2 (ESP-12E)**
+
+---
+
+## 🔗 Referensi
+
+- [ESP8266 Arduino Core](https://github.com/esp8266/Arduino)
+- [ESP8266 WebServer Documentation](https://arduino-esp8266.readthedocs.io/en/latest/esp8266webserver.html)
+- [OTA Web Update Tutorial](https://randomnerdtutorials.com/esp8266-nodemcu-ota-over-the-air-arduino/)

@@ -1,107 +1,107 @@
-# 🚀 ESP8266 Web OTA + Servo + LED Control
+# 🚀 ESP8266 Web OTA + Kontrol Servo + LED
 
-This project documents the development of a responsive web-based control system for the Lolin NodeMCU V1.0 (ESP8266 12E), featuring OTA (Over-the-Air) firmware updates and device control via a browser. The system allows control of a servo motor and built-in LED through an intuitive web interface.
-
----
-
-## 📌 Project Objectives
-
-- Automate firmware `.bin` upload to ESP8266 using GitHub Actions.
-- Enable OTA firmware updates through a web interface.
-- Control a servo motor using an HTML slider.
-- Toggle the onboard LED from a browser switch.
-- Display IP address and WiFi signal strength.
-- Build a clean, responsive, and mobile-friendly interface using Bootstrap.
+Proyek ini mendokumentasikan pengembangan sistem kontrol berbasis web yang responsif untuk Lolin NodeMCU V1.0 (ESP8266 12E), dengan fitur pembaruan firmware OTA (Over-the-Air) dan kontrol perangkat melalui browser. Sistem ini memungkinkan kontrol motor servo dan LED bawaan melalui antarmuka web yang intuitif.
 
 ---
 
-## 🛠️ Development Process
+## 📌 Tujuan Proyek
 
-### 1. Project Initialization
-Set up project structure:
-- `sketch.ino` for Arduino code.
-- GitHub Actions workflow (`compile.yml`) for automation.
-
-### 2. GitHub Actions Setup
-Configured GitHub CI/CD to:
-- Install `arduino-cli`.
-- Add ESP8266 board index.
-- Compile code and export `.bin`.
-- Upload firmware as a downloadable artifact.
-
-### 3. Auto-Naming Firmware with Date
-Each firmware build is renamed with the current date to make it easier to manage multiple versions.
-
-### 4. Basic Web Server & OTA
-Enabled OTA firmware updates via `ESP8266HTTPUpdateServer` and `ArduinoOTA`, served over a local web server.
-
-### 5. Servo Control Implementation
-Connected a servo motor to D5 and enabled control through a web-based slider.
-
-### 6. Servo Range Fix
-Improved servo movement from limited 90° to a responsive ~170° range by adjusting control logic.
-
-### 7. UI Enhancements
-Used Bootstrap to create a clean, modern, and responsive layout including buttons and spacing for better user experience.
-
-### 8. LED Toggle Feature
-Added a toggle switch in the web UI to control the ESP8266's built-in LED (active LOW).
-
-### 9. Network Info Display
-Displayed ESP8266's IP address and WiFi signal strength on the web UI.
-
-### 10. Mobile Browser Optimization
-Optimized the interface layout for mobile browsers, making it user-friendly on small screens.
+- Mengotomatisasi upload firmware `.bin` ke ESP8266 menggunakan GitHub Actions.
+- Mengaktifkan pembaruan firmware OTA melalui antarmuka web.
+- Mengontrol motor servo menggunakan slider HTML.
+- Menghidupkan/mematikan LED onboard dari switch di browser.
+- Menampilkan alamat IP dan kekuatan sinyal WiFi.
+- Membangun antarmuka yang bersih, responsif, dan ramah seluler menggunakan Bootstrap.
 
 ---
 
-## 📱 Apps Used
+## 🛠️ Proses Pengembangan
 
-Here’s a list of Android applications (APKs) used during development and testing:
+### 1. Inisialisasi Proyek
+Menyiapkan struktur proyek:
+- `sketch.ino` untuk kode Arduino.
+- Workflow GitHub Actions (`compile.yml`) untuk otomatisasi.
 
-| Application      | Purpose                                 |
-|------------------|------------------------------------------|
-| **ESP8266 Loader** | Upload `.bin` firmware to ESP8266 via OTG/serial |
-| **GitHub (App)**  | Manage repository, trigger actions      |
-| **Google Chrome** | Access web interface & OTA update page  |
-| **Notepad**       | Quick edits and notes during coding     |
+### 2. Konfigurasi GitHub Actions
+Mengatur CI/CD GitHub untuk:
+- Instal `arduino-cli`.
+- Menambahkan index board ESP8266.
+- Meng-compile kode dan mengekspor `.bin`.
+- Mengunggah firmware sebagai artifact yang dapat diunduh.
 
----
+### 3. Penamaan Firmware Otomatis
+Setiap build firmware diberi nama berdasarkan tanggal saat itu agar mudah dalam pengelolaan versi.
 
-## 📦 Features
+### 4. Web Server & OTA Dasar
+Mengaktifkan pembaruan firmware OTA melalui `ESP8266HTTPUpdateServer` dan `ArduinoOTA`, yang disajikan lewat web server lokal.
 
-- ✅ Firmware compilation via GitHub Actions
-- ✅ OTA firmware update via browser
-- ✅ Servo control with web slider
-- ✅ Built-in LED toggle with switch
-- ✅ Display IP address and WiFi RSSI
-- ✅ Fully responsive interface with Bootstrap
+### 5. Implementasi Kontrol Servo
+Menghubungkan motor servo ke pin D5 dan mengaktifkan kontrol melalui slider di web.
 
----
+### 6. Perbaikan Jangkauan Servo
+Meningkatkan gerakan servo dari 90° terbatas menjadi jangkauan ~170° yang lebih responsif dengan menyesuaikan logika kontrol.
 
-## 🔮 Future Enhancements
+### 7. Penyempurnaan Antarmuka
+Menggunakan Bootstrap untuk membuat tampilan yang bersih, modern, dan responsif lengkap dengan tombol dan jarak yang nyaman.
 
-- Save last known servo position in EEPROM
-- Auto-reboot after OTA update
-- Add password protection for OTA page
-- Add dark mode support
-- Log servo & LED activity to memory or server
+### 8. Fitur Saklar LED
+Menambahkan switch di UI web untuk mengontrol LED bawaan ESP8266 (aktif LOW).
 
----
+### 9. Tampilkan Info Jaringan
+Menampilkan alamat IP dan kekuatan sinyal WiFi ESP8266 di antarmuka web.
 
-## 👤 Author
-
-Developed by **Karim Roy Tampubolon**  
-
----
-
-## 🗓️ Timeline Summary
-
-- **July 1, 2025**: Setup GitHub Actions, OTA server, initial compile
-- **July 1–2, 2025**: Implemented servo, LED toggle, UI, mobile view
-- **July 3, 2025**: Final polish, network info, changelog, documentation
+### 10. Optimasi untuk Browser HP
+Mengoptimalkan layout antarmuka agar nyaman digunakan di browser seluler.
 
 ---
 
-Thanks for exploring this project!  
-Feel free to use or modify it for your own IoT learning and development.
+## 📱 Aplikasi yang Digunakan
+
+Berikut daftar aplikasi Android (APK) yang digunakan selama pengembangan dan pengujian:
+
+| Aplikasi           | Kegunaan                                         |
+|--------------------|--------------------------------------------------|
+| **ESP8266 Loader** | Upload firmware `.bin` ke ESP8266 via OTG/serial |
+| **GitHub (App)**   | Mengelola repository, memicu aksi otomatis       |
+| **Google Chrome**  | Mengakses antarmuka web & halaman OTA            |
+| **Notepad**        | Edit cepat & mencatat selama pengkodean          |
+
+---
+
+## 📦 Fitur-Fitur
+
+- ✅ Kompilasi firmware via GitHub Actions  
+- ✅ Update firmware OTA lewat browser  
+- ✅ Kontrol servo dengan slider web  
+- ✅ Saklar LED bawaan via web  
+- ✅ Tampilkan IP address dan kekuatan sinyal WiFi  
+- ✅ Antarmuka responsif dengan Bootstrap  
+
+---
+
+## 🔮 Rencana Pengembangan
+
+- Menyimpan posisi terakhir servo di EEPROM  
+- Auto-reboot setelah OTA  
+- Proteksi password untuk halaman OTA  
+- Mode gelap (dark mode)  
+- Log aktivitas servo & LED ke memori atau server  
+
+---
+
+## 👤 Pengembang
+
+Dikembangkan oleh **Karim Roy Tampubolon**
+
+---
+
+## 🗓️ Ringkasan Timeline
+
+- **1 Juli 2025**: Setup GitHub Actions, server OTA, kompilasi awal  
+- **1–2 Juli 2025**: Implementasi servo, toggle LED, UI, tampilan seluler  
+- **3 Juli 2025**: Finalisasi, info jaringan, changelog, dokumentasi  
+
+---
+
+Terima kasih telah mengeksplorasi proyek ini!  
+Silakan gunakan atau modifikasi untuk pembelajaran dan pengembangan IoT kamu sendiri.

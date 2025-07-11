@@ -3,10 +3,21 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <ArduinoOTA.h>
 #include <Servo.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
 
+// ====== WIFI & TELEGRAM SETUP ======
 const char* ssid = "karimroy";
 const char* password = "09871234";
 
+const char* botToken = "7826449058:AAHZgPVpCdmwHsmCO6D9wIsnpZj3fOyjXWM";
+String chatId = "7891041281";
+
+WiFiClientSecure secured_client;
+UniversalTelegramBot bot(botToken, secured_client);
+unsigned long lastCheck = 0;
+
+// ====== SERVER & PIN SETUP ======
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
 
@@ -14,6 +25,7 @@ Servo myServo;
 const int servoPin = D5; // GPIO14
 const int ledPin = LED_BUILTIN; // GPIO2 (active LOW)
 
+// ====== UTILITY ======
 String getSignalStrength() {
   int32_t rssi = WiFi.RSSI();
   String strength;
@@ -25,6 +37,7 @@ String getSignalStrength() {
   return String(rssi) + " dBm (" + strength + ")";
 }
 
+// ====== HTML HANDLERS ======
 void handleRoot() {
   String html = R"rawliteral(
     <!DOCTYPE html>
@@ -71,7 +84,6 @@ void handleRoot() {
 
   html.replace("%IP%", WiFi.localIP().toString());
   html.replace("%SIGNAL%", getSignalStrength());
-
   server.send(200, "text/html", html);
 }
 
@@ -118,6 +130,45 @@ void handleUpdatePage() {
   )rawliteral");
 }
 
+// ====== TELEGRAM BOT ======
+void handleTelegramBot() {
+  if (millis() - lastCheck > 10000) {
+    int numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    while (numNewMessages) {
+      for (int i = 0; i < numNewMessages; i++) {
+        String text = bot.messages[i].text;
+        String from = bot.messages[i].from_name;
+
+        Serial.println("Telegram | Dari: " + from + ", Pesan: " + text);
+
+        if (text == "/led_on") {
+          digitalWrite(ledPin, LOW);
+          bot.sendMessage(chatId, "✅ LED dinyalakan!", "");
+        } else if (text == "/led_off") {
+          digitalWrite(ledPin, HIGH);
+          bot.sendMessage(chatId, "❌ LED dimatikan!", "");
+        } else if (text.startsWith("/servo_")) {
+          int percent = text.substring(7).toInt();
+          percent = constrain(percent, 0, 100);
+          int micro = map(percent, 0, 100, 500, 2500);
+          myServo.writeMicroseconds(micro);
+          bot.sendMessage(chatId, "🔄 Servo diatur ke " + String(percent) + "%", "");
+        } else if (text == "/status") {
+          String msg = "📡 *Status ESP8266*\n";
+          msg += "🆔 IP: `" + WiFi.localIP().toString() + "`\n";
+          msg += "📶 Signal: `" + getSignalStrength() + "`";
+          bot.sendMessage(chatId, msg, "Markdown");
+        } else {
+          bot.sendMessage(chatId, "❓ Perintah tidak dikenal", "");
+        }
+      }
+      numNewMessages = bot.getUpdates(bot.last_message_received + 1);
+    }
+    lastCheck = millis();
+  }
+}
+
+// ====== SETUP ======
 void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
@@ -140,13 +191,14 @@ void setup() {
 
   httpUpdater.setup(&server, "/update");
 
+  secured_client.setInsecure(); // penting untuk Telegram bot
   server.begin();
   ArduinoOTA.begin();
 }
 
+// ====== LOOP ======
 void loop() {
   server.handleClient();
   ArduinoOTA.handle();
+  handleTelegramBot();
 }
-
-// edit file 1

@@ -105,3 +105,124 @@ Dikembangkan oleh **Karim Roy Tampubolon**
 
 Terima kasih telah mengeksplorasi proyek ini!  
 Silakan gunakan atau modifikasi untuk pembelajaran dan pengembangan IoT kamu sendiri.
+
+
+# BONUS
+
+# 🔥 ESP8266 Cheat Sheet (Jarang Diketahui)
+
+## ⚡ 1. Upload Firmware Lewat Browser (Web OTA)
+Tanpa laptop, cukup browser:
+
+```cpp
+ArduinoOTA.handle(); // Tambahkan di loop()
+```
+
+Bisa diakses dari HP, praktis banget!
+
+---
+
+## 🔌 2. GPIO Rahasia (Tidak Semua Bisa Dipakai)
+
+| Pin      | Nama   | Catatan                        |
+|----------|--------|--------------------------------|
+| D0 (16)  | GPIO16 | Gak support `attachInterrupt`  |
+| D3 (0)   | GPIO0  | Terhubung ke flash mode        |
+| D4 (2)   | GPIO2  | LED bawaan                     |
+| D8 (15)  | GPIO15 | Harus LOW saat boot            |
+
+---
+
+## 🛜 3. Auto Connect Wi-Fi + Portal Config
+
+```cpp
+#include <WiFiManager.h>
+WiFiManager wm;
+wm.autoConnect("ESP8266-Setup");
+```
+
+Langsung muncul portal Wi-Fi saat belum terhubung internet!
+
+---
+
+## 🧠 4. Simpan Data ke EEPROM/Flash
+
+```cpp
+#include <EEPROM.h>
+EEPROM.begin(512);
+EEPROM.write(0, 123); // Simpan
+EEPROM.commit();
+EEPROM.read(0); // Ambil
+```
+
+Cocok buat nyimpan token, config, dsb.
+
+---
+
+## 🔄 5. Deep Sleep untuk Hemat Baterai
+
+```cpp
+ESP.deepSleep(60e6); // 60 detik
+```
+
+Konsumsi daya turun drastis! Tapi pastikan GPIO16 dihubungkan ke RST.
+
+---
+
+## 🌐 6. Buat Web Server Kecil
+
+```cpp
+server.on("/", []() {
+  server.send(200, "text/plain", "Hello from ESP8266!");
+});
+```
+
+Gak perlu backend, cukup ESP!
+
+---
+
+## 🔒 7. Password di OTA Update
+
+```cpp
+ArduinoOTA.setPassword("yourpassword");
+```
+
+Biar orang lain gak bisa update sembarangan.
+
+---
+
+## 🧲 8. Gunakan DNS Redirect di Captive Portal
+
+```cpp
+dnsServer.start(53, "*", IPAddress(192,168,4,1));
+```
+
+Redirect semua domain ke IP ESP, mirip login Wi-Fi hotel!
+
+---
+
+## 🔋 9. Baca Tegangan Baterai (Hanya ESP8266 tertentu)
+
+```cpp
+float voltage = analogRead(A0) * (3.3 / 1024.0);
+```
+
+Kalau pakai voltage divider, sesuaikan.
+
+---
+
+## 📦 10. Upload File HTML/JS/CSS ke SPIFFS
+
+```bash
+pio run --target uploadfs
+```
+
+Atau di Arduino IDE: **Tools → ESP8266 Sketch Data Upload**
+
+---
+
+## 📌 Tips Tambahan
+
+- Gunakan `Serial.printf()` untuk debugging yang lebih rapi.
+- Kombinasikan dengan **Blynk**, **Telegram Bot**, atau **Firebase** buat proyek IoT keren.
+- Gunakan `millis()` bukan `delay()` untuk multitasking non-blocking.

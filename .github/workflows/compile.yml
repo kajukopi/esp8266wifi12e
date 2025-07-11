@@ -34,6 +34,8 @@ jobs:
       run: |
         arduino-cli lib install "UniversalTelegramBot"
         arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "WebSockets"
+        arduino-cli lib install "Servo"
 
     - name: 🛠️ Compile sketch
       run: |
@@ -59,7 +61,7 @@ jobs:
         name: esp8266wifi12e-${{ steps.date.outputs.today }}
         path: build/esp8266wifi12e-*.bin
 
-    - name: Create GitHub Release
+    - name: 🏷️ Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: esp8266wifi12e-${{ steps.date.outputs.today }}

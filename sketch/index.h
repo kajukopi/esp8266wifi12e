@@ -1,6 +1,6 @@
 const char MAIN_page[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>ESP8266 Control</title>
@@ -27,25 +27,30 @@ const char MAIN_page[] PROGMEM = R"rawliteral(
   <a href="/update" class="btn btn-primary mt-4"><i class="fas fa-upload"></i> OTA Update</a>
 
   <script>
-    const socket = new WebSocket(`ws://${location.host}/ws`);
     const slider = document.getElementById('slider');
     const angleValue = document.getElementById('angleValue');
     const ledSwitch = document.getElementById('ledSwitch');
 
-    socket.onmessage = event => {
-      const data = JSON.parse(event.data);
-      if (data.signal) document.getElementById('signal').textContent = data.signal;
-      if (data.ip) document.getElementById('ip').textContent = data.ip;
-    };
-
     slider.oninput = () => {
       angleValue.textContent = slider.value + "%";
-      socket.send(JSON.stringify({ servo: slider.value }));
+      fetch("/setServo?percent=" + slider.value);
     };
 
     ledSwitch.onchange = () => {
-      socket.send(JSON.stringify({ led: ledSwitch.checked ? "on" : "off" }));
+      fetch("/toggleLED?state=" + (ledSwitch.checked ? "on" : "off"));
     };
+
+    function updateStatus() {
+      fetch("/status")
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('ip').textContent = data.ip;
+          document.getElementById('signal').textContent = data.signal;
+        });
+    }
+
+    setInterval(updateStatus, 2000);
+    updateStatus();
   </script>
 </body>
 </html>

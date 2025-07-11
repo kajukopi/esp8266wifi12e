@@ -15,7 +15,7 @@ const char UPDATE_page[] PROGMEM = R"rawliteral(
     <input type="file" name="firmware" class="form-control mb-3" required>
     <input type="submit" value="Upload" class="btn btn-success">
   </form>
-  <a href="/" class="btn btn-secondary mt-4"><i class="fas fa-arrow-left"></i> Kembali</a>
+  <a href="/" class="btn btn-secondary mt-4"><i class="fas fa-arrow-left"></i> Back</a>
 </body>
 </html>
 )rawliteral";

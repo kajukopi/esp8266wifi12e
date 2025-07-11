@@ -46,16 +46,16 @@ jobs:
 
     - name: 📂 Rename firmware with date
       run: |
-        mv build/sketch.ino.bin build/firmware-${{ steps.date.outputs.today }}.bin
+        mv build/sketch.ino.bin build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin
 
     - name: 🚀 Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ steps.date.outputs.today }}
-        path: build/firmware-*.bin
+        name: esp8266wifi12e-${{ steps.date.outputs.today }}
+        path: build/esp8266wifi12e-*.bin
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: firmware-${{ steps.date.outputs.today }}
-        files: build/firmware-*.bin
+        tag_name: esp8266wifi12e-${{ steps.date.outputs.today }}
+        files: build/esp8266wifi12e-*.bin

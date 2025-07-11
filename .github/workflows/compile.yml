@@ -1,4 +1,4 @@
-name: Compile ESP8266 Sketch
+name: Compile ESP8266 Sketch with LittleFS
 
 on:
   push:
@@ -42,25 +42,35 @@ jobs:
           sketch \
           --output-dir build
 
-    - name: 🔍 List build directory
+    - name: 🧾 List compiled firmware
       run: ls -lah build
 
     - name: 📅 Get date
       id: date
       run: echo "today=$(date +%F-%H%M)" >> "$GITHUB_OUTPUT"
 
-    - name: 📂 Rename firmware with date
+    - name: 🏷 Rename firmware .bin with date
       run: |
         mv build/sketch.ino.bin build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin
 
-    - name: 🚀 Upload firmware artifact
+    - name: 📂 Prepare LittleFS filesystem image
+      run: |
+        mkdir -p build/littlefs
+        cp -r data/* build/littlefs/
+        zip -r build/littlefs.zip build/littlefs
+
+    - name: 📦 Upload firmware and LittleFS image as artifacts
       uses: actions/upload-artifact@v4
       with:
         name: esp8266wifi12e-${{ steps.date.outputs.today }}
-        path: build/esp8266wifi12e-*.bin
+        path: |
+          build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin
+          build/littlefs.zip
 
-    - name: Create GitHub Release
+    - name: 🚀 Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: esp8266wifi12e-${{ steps.date.outputs.today }}
-        files: build/esp8266wifi12e-*.bin
+        files: |
+          build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin
+          build/littlefs.zip

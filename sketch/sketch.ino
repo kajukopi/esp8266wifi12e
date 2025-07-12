@@ -4,39 +4,38 @@
 #include <ArduinoOTA.h>
 #include <Servo.h>
 #include <WiFiClientSecure.h>
-#include <UniversalTelegramBot.h>
 #include <FirebaseESP8266.h>
-#include "webpage.h"  // Web UI HTML
+#include <UniversalTelegramBot.h>
+#include "webpage.h"  // Halaman kontrol dan OTA
 
-// WiFi credentials
+// WiFi
 const char* ssid = "karimroy";
 const char* password = "09871234";
 
-// Telegram credentials
-const char* botToken = "YOUR_BOT_TOKEN";
+// Telegram
+const char* botToken = "YOUR_TELEGRAM_BOT_TOKEN";
 String chatId = "YOUR_CHAT_ID";
 
-// Firebase
+// Firebase Realtime DB
+#define FIREBASE_HOST "payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_AUTH "NyUsJ10Dn8STiQACqtSFttiGCqvE1kHNRXg9EBin"
 FirebaseData fbdo;
-FirebaseAuth auth;
 FirebaseConfig config;
+FirebaseAuth auth;
+String firebasePath = "/device_status";
 
-// Firebase constants
-const String firebasePath = "/device_status";
-
-// Web & OTA
+// ESP
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
-
-// Hardware
-Servo myServo;
-const int servoPin = D5;
-const int ledPin = LED_BUILTIN;
-
 WiFiClientSecure secured_client;
 UniversalTelegramBot bot(botToken, secured_client);
+Servo myServo;
+
+const int servoPin = D5;
+const int ledPin = LED_BUILTIN;
 unsigned long lastCheck = 0;
 
+// Ambil sinyal WiFi dalam teks
 String getSignalStrength() {
   int rssi = WiFi.RSSI();
   if (rssi > -50) return String(rssi) + " dBm (Excellent)";
@@ -46,13 +45,14 @@ String getSignalStrength() {
   return String(rssi) + " dBm (Weak)";
 }
 
+// Kirim data ke Firebase
 void sendToFirebase() {
   FirebaseJson json;
   json.set("ip", WiFi.localIP().toString());
   json.set("signal", getSignalStrength());
   json.set("millis", millis());
 
-  if (Firebase.RTDB.setJSON(&fbdo, firebasePath.c_str(), &json)) {
+  if (Firebase.setJSON(fbdo, firebasePath.c_str(), json)) {
     Serial.println("📤 Sent to Firebase");
   } else {
     Serial.print("❌ Firebase Error: ");
@@ -60,6 +60,7 @@ void sendToFirebase() {
   }
 }
 
+// Handle Telegram Command
 void handleTelegramBot() {
   if (millis() - lastCheck > 10000) {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
@@ -96,8 +97,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500); Serial.print(".");
   }
-  Serial.println("\n✅ Connected to WiFi");
-  Serial.println("🆔 IP: " + WiFi.localIP().toString());
+  Serial.println("\n✅ WiFi Connected! IP: " + WiFi.localIP().toString());
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
@@ -105,13 +105,13 @@ void setup() {
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Firebase setup
-  config.api_key = "AIzaSyCjRBls8ocobTwkZdbt44TrHWLg2O42A9c";
-  config.database_url = "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app/";
+  // Firebase Init
+  config.host = FIREBASE_HOST;
+  config.api_key = FIREBASE_AUTH;
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
-  // Web UI
+  // OTA & Web Server
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -122,6 +122,7 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
+      sendToFirebase();  // Update Firebase setelah perubahan
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -132,6 +133,7 @@ void setup() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
       digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
+      sendToFirebase();  // Update Firebase setelah perubahan
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
@@ -151,10 +153,4 @@ void loop() {
   server.handleClient();
   ArduinoOTA.handle();
   handleTelegramBot();
-
-  static unsigned long lastSend = 0;
-  if (millis() - lastSend > 10000) {
-    sendToFirebase();
-    lastSend = millis();
-  }
 }

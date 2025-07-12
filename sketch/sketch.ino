@@ -19,24 +19,29 @@ String chatId = "YOUR_CHAT_ID";
 // Firebase Realtime DB
 #define FIREBASE_HOST "payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app"
 #define FIREBASE_AUTH "NyUsJ10Dn8STiQACqtSFttiGCqvE1kHNRXg9EBin"
-
 FirebaseData fbdo;
 FirebaseConfig config;
 FirebaseAuth auth;
 String firebasePath = "/device_status";
 
-// ESP
+// ESP & Log
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
 WiFiClientSecure secured_client;
 UniversalTelegramBot bot(botToken, secured_client);
 Servo myServo;
+String logBuffer = "";
 
 const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
 unsigned long lastCheck = 0;
 
-// Fungsi untuk sinyal WiFi dalam teks
+void addLog(String msg) {
+  Serial.println(msg);
+  logBuffer += msg + "\n";
+  if (logBuffer.length() > 1500) logBuffer = logBuffer.substring(logBuffer.length() - 1500);
+}
+
 String getSignalStrength() {
   int rssi = WiFi.RSSI();
   if (rssi > -50) return String(rssi) + " dBm (Excellent)";
@@ -46,7 +51,6 @@ String getSignalStrength() {
   return String(rssi) + " dBm (Weak)";
 }
 
-// Kirim data ke Firebase
 void sendToFirebase() {
   FirebaseJson json;
   json.set("ip", WiFi.localIP().toString());
@@ -54,21 +58,18 @@ void sendToFirebase() {
   json.set("millis", millis());
 
   if (Firebase.setJSON(fbdo, firebasePath.c_str(), json)) {
-    Serial.println("📤 Sent to Firebase");
+    addLog("📤 Sent to Firebase");
   } else {
-    Serial.print("❌ Firebase Error: ");
-    Serial.println(fbdo.errorReason());
+    addLog("❌ Firebase Error: " + fbdo.errorReason());
   }
 }
 
-// Telegram Bot Handler
 void handleTelegramBot() {
   if (millis() - lastCheck > 10000) {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
     while (numNew) {
       for (int i = 0; i < numNew; i++) {
         String text = bot.messages[i].text;
-
         if (text == "/led_on") {
           digitalWrite(ledPin, LOW);
           bot.sendMessage(chatId, "✅ LED dinyalakan", "");
@@ -98,21 +99,22 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500); Serial.print(".");
   }
-  Serial.println("\n✅ WiFi Connected! IP: " + WiFi.localIP().toString());
+  addLog("✅ WiFi Connected! IP: " + WiFi.localIP().toString());
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH);  // OFF default
+  digitalWrite(ledPin, HIGH);
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Firebase
+  // Firebase Init
   config.host = FIREBASE_HOST;
   config.api_key = FIREBASE_AUTH;
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+  addLog("🔥 Firebase Initialized");
 
-  // OTA & WebServer
+  // Web Server
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -123,7 +125,7 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
-      sendToFirebase();  // Update Firebase
+      sendToFirebase();
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -134,7 +136,7 @@ void setup() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
       digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
-      sendToFirebase();  // Update Firebase
+      sendToFirebase();
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
@@ -144,6 +146,10 @@ void setup() {
   server.on("/status", HTTP_GET, []() {
     String json = "{\"ip\":\"" + WiFi.localIP().toString() + "\",\"signal\":\"" + getSignalStrength() + "\"}";
     server.send(200, "application/json", json);
+  });
+
+  server.on("/log", HTTP_GET, []() {
+    server.send(200, "text/plain", logBuffer);
   });
 
   server.begin();

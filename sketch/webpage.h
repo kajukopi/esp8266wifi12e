@@ -51,7 +51,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
 <body>
 
   <!-- Sidebar -->
-  <div id="mySidebar" class="sidebar">
+  <div id="mySidebar" class="sidebar mt-5">
     <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
     <h5 class="text-center mt-3"><i class="fas fa-microchip"></i> ESP8266</h5>
     <a href="#" onclick="showPage('home')"><i class="fas fa-home"></i> Home</a>

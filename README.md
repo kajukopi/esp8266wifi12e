@@ -1,3 +1,7 @@
+![Build](https://github.com/kajukopi/esp8266wifi12e/actions/workflows/compile.yml/badge.svg)
+[![Latest Release](https://img.shields.io/github/v/release/kajukopi/esp8266wifi12e)](https://github.com/kajukopi/esp8266wifi12e/releases)
+
+
 # 🚀 ESP8266 Web Control + Firebase + OTA + Telegram
 
 Proyek ini mendemonstrasikan **ESP8266 Web Panel** modern yang dapat dikontrol melalui **browser, Firebase Realtime Database, dan Telegram Bot**. Sistem ini cocok digunakan untuk otomasi rumah, monitoring jarak jauh, dan pembelajaran IoT.

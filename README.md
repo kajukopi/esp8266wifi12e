@@ -17,9 +17,11 @@ Proyek ini mendemonstrasikan **ESP8266 Web Panel** modern yang dapat dikontrol m
 
 ---
 
-## 📸 Screenshot
+## 📸 Screenshot UI
 
-> *(Tambahkan screenshot hasil build UI, log panel, Firebase, dan Telegram bot di sini)*
+| Web Panel | Firebase Sync | OTA Update | Telegram Bot |
+|-----------|----------------|-------------|---------------|
+| ![Web UI](image/Screenshot_20250712-172525.png) | ![Firebase Log](image/Screenshot_20250712-172530.png) | ![OTA Update](image/Screenshot_20250712-172534.png) | ![Telegram Bot](image/Screenshot_20250712-172543.png) |
 
 ---
 

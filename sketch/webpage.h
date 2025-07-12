@@ -12,37 +12,15 @@ const char WEB_page[] PROGMEM = R"rawliteral(
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet"/>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; }
-
     .sidebar {
-      height: 100%;
-      width: 0;
-      position: fixed;
-      z-index: 1000;
-      top: 0;
-      left: 0;
-      background-color: #0d6efd;
-      overflow-x: hidden;
-      transition: 0.3s;
-      padding-top: 2rem;
+      height: 100%; width: 0; position: fixed; z-index: 1000;
+      top: 0; left: 0; background-color: #0d6efd;
+      overflow-x: hidden; transition: 0.3s; padding-top: 2rem;
       color: white;
     }
-
-    .sidebar a {
-      display: block;
-      color: white;
-      padding: 1rem 1.5rem;
-      text-decoration: none;
-    }
-
+    .sidebar a { display: block; color: white; padding: 1rem 1.5rem; text-decoration: none; }
     .sidebar a:hover { background-color: #0b5ed7; }
-
-    .sidebar .closebtn {
-      position: absolute;
-      top: 0.5rem;
-      right: 1rem;
-      font-size: 30px;
-    }
-
+    .sidebar .closebtn { position: absolute; top: 0.5rem; right: 1rem; font-size: 30px; }
     .main-content { margin-left: 0; padding: 2rem; transition: margin-left 0.3s; }
     .card { margin-bottom: 2rem; }
     .navbar { z-index: 1100; }
@@ -71,6 +49,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
   <!-- Main Content -->
   <div class="main-content">
     <div class="container">
+
       <!-- Home Page -->
       <div id="home-page">
         <div class="card shadow-2-strong text-center">
@@ -116,7 +95,24 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
   <script>
+    // Firebase Konfigurasi
+    const firebaseConfig = {
+      apiKey: "AIzaSyCjRBls8ocobTwkZdbt44TrHWLg2O42A9c",
+      authDomain: "payunghitam.firebaseapp.com",
+      databaseURL: "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "payunghitam",
+      storageBucket: "payunghitam.appspot.com",
+      messagingSenderId: "600763621790",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Sidebar toggle
     function openSidebar() {
       document.getElementById("mySidebar").style.width = "220px";
     }
@@ -131,38 +127,56 @@ const char WEB_page[] PROGMEM = R"rawliteral(
       closeSidebar();
     }
 
-    // Initial Load
     showPage('home');
 
-    // Slider & LED
     const slider = document.getElementById('slider');
     const angleValue = document.getElementById('angleValue');
     const ledSwitch = document.getElementById('ledSwitch');
 
-    if (slider) {
-      slider.oninput = () => {
-        angleValue.textContent = slider.value + "%";
-        fetch("/setServo?percent=" + slider.value);
-      };
-    }
+    // Sinkronkan ke ESP8266 dan Firebase
+    slider.oninput = () => {
+      angleValue.textContent = slider.value + "%";
+      fetch("/setServo?percent=" + slider.value);
+      db.ref("status/servo").set(Number(slider.value));
+    };
 
-    if (ledSwitch) {
-      ledSwitch.onchange = () => {
-        fetch("/toggleLED?state=" + (ledSwitch.checked ? "on" : "off"));
-      };
-    }
+    ledSwitch.onchange = () => {
+      const state = ledSwitch.checked ? "on" : "off";
+      fetch("/toggleLED?state=" + state);
+      db.ref("status/led").set(ledSwitch.checked);
+    };
 
-    function updateStatus() {
+    // Update status dari ESP8266
+    function syncFromESP() {
       fetch("/status")
         .then(res => res.json())
         .then(data => {
           document.getElementById('ip').textContent = data.ip;
           document.getElementById('signal').textContent = data.signal;
+          slider.value = data.servo;
+          angleValue.textContent = data.servo + "%";
+          ledSwitch.checked = data.led;
         });
     }
 
-    setInterval(updateStatus, 2000);
-    updateStatus();
+    // Update dari Firebase ke UI (opsional, kalau mau kendali dari Firebase langsung)
+    db.ref("status/servo").on("value", snap => {
+      const val = snap.val();
+      if (val !== null) {
+        slider.value = val;
+        angleValue.textContent = val + "%";
+      }
+    });
+
+    db.ref("status/led").on("value", snap => {
+      const on = snap.val();
+      if (on !== null) {
+        ledSwitch.checked = on;
+      }
+    });
+
+    setInterval(syncFromESP, 2000);
+    syncFromESP();
   </script>
 </body>
 </html>

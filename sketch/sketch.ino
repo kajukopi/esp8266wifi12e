@@ -52,8 +52,8 @@ void sendToFirebase() {
   json.set("signal", getSignalStrength());
   json.set("millis", millis());
 
-  if (Firebase.setJSON(fbdo, firebasePath.c_str(), json)) {
-    Serial.println("📤 Sent to Firebase");
+  if (Firebase.RTDB.setJSON(&fbdo, firebasePath.c_str(), &json)) {
+    Serial.println("📤 Sent to Firebase: " + fbdo.payload());
   } else {
     Serial.print("❌ Firebase Error: ");
     Serial.println(fbdo.errorReason());
@@ -71,13 +71,16 @@ void handleTelegramBot() {
         if (text == "/led_on") {
           digitalWrite(ledPin, LOW);
           bot.sendMessage(chatId, "✅ LED dinyalakan", "");
+          sendToFirebase();
         } else if (text == "/led_off") {
           digitalWrite(ledPin, HIGH);
           bot.sendMessage(chatId, "❌ LED dimatikan", "");
+          sendToFirebase();
         } else if (text.startsWith("/servo_")) {
           int val = constrain(text.substring(7).toInt(), 0, 100);
           myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
           bot.sendMessage(chatId, "🎚️ Servo ke " + String(val) + "%", "");
+          sendToFirebase();
         } else if (text == "/status") {
           String msg = "📡 *ESP8266 Status*\n";
           msg += "🆔 IP: `" + WiFi.localIP().toString() + "`\n";
@@ -147,6 +150,7 @@ void setup() {
 
   server.begin();
   ArduinoOTA.begin();
+  sendToFirebase(); // Kirim data awal saat start
 }
 
 void loop() {

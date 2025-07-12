@@ -8,43 +8,62 @@ const char UPDATE_page[] PROGMEM = R"rawliteral(
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet"/>
   <style>
-    body { padding-top: 4rem; }
-    .card { margin-top: 2rem; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      height: 100vh;
+      width: 220px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #0d6efd;
+      padding-top: 2rem;
+      color: white;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      padding: 1rem 1.5rem;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #0b5ed7;
+    }
+    .main-content {
+      margin-left: 220px;
+      padding: 2rem;
+    }
+    .card {
+      margin-top: 2rem;
+    }
   </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#"><i class="fas fa-microchip"></i> ESP8266</a>
-      <button class="navbar-toggler" type="button" data-mdb-toggle="collapse" data-mdb-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="/"><i class="fas fa-home"></i> Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="/update"><i class="fas fa-upload"></i> OTA Update</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
 
-  <!-- Update Card -->
-  <div class="container">
-    <div class="card shadow-2-strong">
-      <div class="card-body text-center">
-        <h5 class="card-title"><i class="fas fa-upload"></i> OTA Firmware Update</h5>
-        <form method="POST" action="/update" enctype="multipart/form-data" class="mt-4">
-          <input type="file" name="firmware" class="form-control mb-3" required>
-          <input type="submit" value="Upload" class="btn btn-success">
-        </form>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h5 class="text-center"><i class="fas fa-microchip"></i> ESP8266</h5>
+    <a href="/"><i class="fas fa-home"></i> Home</a>
+    <a href="/update"><i class="fas fa-upload"></i> OTA Update</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <div class="card shadow-2-strong">
+        <div class="card-body text-center">
+          <h5 class="card-title"><i class="fas fa-upload"></i> OTA Firmware Update</h5>
+          <form method="POST" action="/update" enctype="multipart/form-data" class="mt-4">
+            <input type="file" name="firmware" class="form-control mb-3" required>
+            <input type="submit" value="Upload" class="btn btn-success">
+          </form>
+        </div>
       </div>
     </div>
   </div>
+
 </body>
 </html>
 )rawliteral";

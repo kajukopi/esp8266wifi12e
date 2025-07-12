@@ -7,25 +7,64 @@ const char MAIN_page[] PROGMEM = R"rawliteral(
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet"/>
-  <style>body{padding:2rem}</style>
+  <style>
+    body { padding-top: 4rem; }
+    .card { margin-bottom: 2rem; }
+  </style>
 </head>
-<body class="container text-center">
-  <h3><i class="fas fa-microchip"></i> ESP8266 Control Panel</h3>
-  <p><i class="fas fa-wifi"></i> IP: <span id="ip">-</span></p>
-  <p><i class="fas fa-signal"></i> Signal: <span id="signal">-</span></p>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><i class="fas fa-microchip"></i> ESP8266</a>
+      <button class="navbar-toggler" type="button" data-mdb-toggle="collapse" data-mdb-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="#"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/update"><i class="fas fa-upload"></i> OTA Update</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-  <div class="mt-4">
-    <label><i class="fas fa-sliders-h"></i> Servo Angle: <span id="angleValue">0%</span></label>
-    <input type="range" class="form-range" id="slider" min="0" max="100" value="0">
+  <div class="container">
+    <!-- Device Info -->
+    <div class="card shadow-2-strong">
+      <div class="card-body text-center">
+        <h5 class="card-title"><i class="fas fa-satellite-dish"></i> Device Info</h5>
+        <p><i class="fas fa-wifi"></i> IP Address: <span id="ip">-</span></p>
+        <p><i class="fas fa-signal"></i> Signal Strength: <span id="signal">-</span></p>
+      </div>
+    </div>
+
+    <!-- Servo Control -->
+    <div class="card shadow-2-strong">
+      <div class="card-body text-center">
+        <h5 class="card-title"><i class="fas fa-sliders-h"></i> Servo Control</h5>
+        <p>Angle: <span id="angleValue">0%</span></p>
+        <input type="range" class="form-range" id="slider" min="0" max="100" value="0">
+      </div>
+    </div>
+
+    <!-- LED Control -->
+    <div class="card shadow-2-strong">
+      <div class="card-body text-center">
+        <h5 class="card-title"><i class="fas fa-lightbulb"></i> LED Control</h5>
+        <div class="form-check form-switch d-flex justify-content-center">
+          <input class="form-check-input" type="checkbox" id="ledSwitch">
+          <label class="form-check-label ms-2" for="ledSwitch">LED Status</label>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-check form-switch mt-4">
-    <input class="form-check-input" type="checkbox" id="ledSwitch">
-    <label class="form-check-label"><i class="fas fa-lightbulb"></i> LED</label>
-  </div>
-
-  <a href="/update" class="btn btn-primary mt-4"><i class="fas fa-upload"></i> OTA Update</a>
-
+  <!-- Scripts -->
   <script>
     const slider = document.getElementById('slider');
     const angleValue = document.getElementById('angleValue');

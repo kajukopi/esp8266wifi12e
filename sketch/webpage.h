@@ -12,44 +12,37 @@ const char WEB_page[] PROGMEM = R"rawliteral(
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.1/mdb.min.css" rel="stylesheet"/>
   <style>
     body { margin: 0; font-family: Arial, sans-serif; }
-
     .sidebar {
       height: 100%;
       width: 0;
       position: fixed;
       z-index: 1000;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       background-color: #0d6efd;
       overflow-x: hidden;
       transition: 0.3s;
       padding-top: 2rem;
       color: white;
     }
-
     .sidebar a {
       display: block;
       color: white;
       padding: 1rem 1.5rem;
       text-decoration: none;
     }
-
     .sidebar a:hover { background-color: #0b5ed7; }
-
     .sidebar .closebtn {
       position: absolute;
       top: 0.5rem;
       right: 1rem;
       font-size: 30px;
     }
-
     .main-content { margin-left: 0; padding: 2rem; transition: margin-left 0.3s; }
     .card { margin-bottom: 2rem; }
     .navbar { z-index: 1100; }
   </style>
 </head>
 <body>
-
   <!-- Sidebar -->
   <div id="mySidebar" class="sidebar mt-5">
     <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
@@ -98,6 +91,13 @@ const char WEB_page[] PROGMEM = R"rawliteral(
             </div>
           </div>
         </div>
+
+        <div class="card shadow-2-strong text-center">
+          <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-terminal"></i> ESP Log</h5>
+            <pre id="espLog" style="text-align:left; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding:1rem; border-radius:10px; font-size: 0.9rem;"></pre>
+          </div>
+        </div>
       </div>
 
       <!-- Update Page -->
@@ -112,58 +112,64 @@ const char WEB_page[] PROGMEM = R"rawliteral(
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <script>
-    function openSidebar() {
-      document.getElementById("mySidebar").style.width = "220px";
-    }
+<script>
+  function openSidebar() {
+    document.getElementById("mySidebar").style.width = "220px";
+  }
+  function closeSidebar() {
+    document.getElementById("mySidebar").style.width = "0";
+  }
+  function showPage(page) {
+    document.getElementById("home-page").style.display = (page === "home") ? "block" : "none";
+    document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
+    closeSidebar();
+  }
 
-    function closeSidebar() {
-      document.getElementById("mySidebar").style.width = "0";
-    }
+  const slider = document.getElementById('slider');
+  const angleValue = document.getElementById('angleValue');
+  const ledSwitch = document.getElementById('ledSwitch');
 
-    function showPage(page) {
-      document.getElementById("home-page").style.display = (page === "home") ? "block" : "none";
-      document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
-      closeSidebar();
-    }
+  if (slider) {
+    slider.oninput = () => {
+      angleValue.textContent = slider.value + "%";
+      fetch("/setServo?percent=" + slider.value);
+    };
+  }
 
-    // Initial Load
-    showPage('home');
+  if (ledSwitch) {
+    ledSwitch.onchange = () => {
+      fetch("/toggleLED?state=" + (ledSwitch.checked ? "on" : "off"));
+    };
+  }
 
-    // Slider & LED
-    const slider = document.getElementById('slider');
-    const angleValue = document.getElementById('angleValue');
-    const ledSwitch = document.getElementById('ledSwitch');
+  function updateStatus() {
+    fetch("/status")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('ip').textContent = data.ip;
+        document.getElementById('signal').textContent = data.signal;
+      });
+  }
 
-    if (slider) {
-      slider.oninput = () => {
-        angleValue.textContent = slider.value + "%";
-        fetch("/setServo?percent=" + slider.value);
-      };
-    }
+  function updateLog() {
+    fetch("/log")
+      .then(res => res.text())
+      .then(data => {
+        const logEl = document.getElementById("espLog");
+        logEl.textContent = data;
+        logEl.scrollTop = logEl.scrollHeight;
+      });
+  }
 
-    if (ledSwitch) {
-      ledSwitch.onchange = () => {
-        fetch("/toggleLED?state=" + (ledSwitch.checked ? "on" : "off"));
-      };
-    }
-
-    function updateStatus() {
-      fetch("/status")
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('ip').textContent = data.ip;
-          document.getElementById('signal').textContent = data.signal;
-        });
-    }
-
-    setInterval(updateStatus, 3000);
-    updateStatus();
-  </script>
+  setInterval(updateStatus, 2000);
+  setInterval(updateLog, 3000);
+  updateStatus();
+  updateLog();
+  showPage('home');
+</script>
 </body>
 </html>
 )rawliteral";

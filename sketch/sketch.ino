@@ -6,25 +6,29 @@
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
 #include <FirebaseESP8266.h>
-#include "webpage.h"
+#include "webpage.h"  // Web UI HTML
 
-// WiFi
+// WiFi credentials
 const char* ssid = "karimroy";
 const char* password = "09871234";
 
-// Telegram Bot
+// Telegram credentials
 const char* botToken = "YOUR_BOT_TOKEN";
 String chatId = "YOUR_CHAT_ID";
 
 // Firebase
-#define FIREBASE_HOST "payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH "NyUsJ10Dn8STiQACqtSFttiGCqvE1kHNRXg9EBin"
-
 FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
 
-// Pin dan objek
+// Firebase constants
+const String firebasePath = "/device_status";
+
+// Web & OTA
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
+
+// Hardware
 Servo myServo;
 const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
@@ -42,6 +46,20 @@ String getSignalStrength() {
   return String(rssi) + " dBm (Weak)";
 }
 
+void sendToFirebase() {
+  FirebaseJson json;
+  json.set("ip", WiFi.localIP().toString());
+  json.set("signal", getSignalStrength());
+  json.set("millis", millis());
+
+  if (Firebase.RTDB.setJSON(&fbdo, firebasePath.c_str(), &json)) {
+    Serial.println("📤 Sent to Firebase");
+  } else {
+    Serial.print("❌ Firebase Error: ");
+    Serial.println(fbdo.errorReason());
+  }
+}
+
 void handleTelegramBot() {
   if (millis() - lastCheck > 10000) {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
@@ -52,16 +70,13 @@ void handleTelegramBot() {
         if (text == "/led_on") {
           digitalWrite(ledPin, LOW);
           bot.sendMessage(chatId, "✅ LED dinyalakan", "");
-          Firebase.setBool(fbdo, "/status/led", true);
         } else if (text == "/led_off") {
           digitalWrite(ledPin, HIGH);
           bot.sendMessage(chatId, "❌ LED dimatikan", "");
-          Firebase.setBool(fbdo, "/status/led", false);
         } else if (text.startsWith("/servo_")) {
           int val = constrain(text.substring(7).toInt(), 0, 100);
           myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
           bot.sendMessage(chatId, "🎚️ Servo ke " + String(val) + "%", "");
-          Firebase.setInt(fbdo, "/status/servo", val);
         } else if (text == "/status") {
           String msg = "📡 *ESP8266 Status*\n";
           msg += "🆔 IP: `" + WiFi.localIP().toString() + "`\n";
@@ -81,22 +96,22 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500); Serial.print(".");
   }
-  Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
+  Serial.println("\n✅ Connected to WiFi");
+  Serial.println("🆔 IP: " + WiFi.localIP().toString());
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH);  // LED OFF
+  digitalWrite(ledPin, HIGH);  // LED OFF default
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Firebase
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  // Firebase setup
+  config.api_key = "AIzaSyCjRBls8ocobTwkZdbt44TrHWLg2O42A9c";
+  config.database_url = "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app/";
+  Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
-  // OTA
-  ArduinoOTA.begin();
-
-  // Webserver
+  // Web UI
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -107,7 +122,6 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
-      Firebase.setInt(fbdo, "/status/servo", val);
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -117,9 +131,7 @@ void setup() {
   server.on("/toggleLED", []() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
-      bool isOn = (state == "on");
-      digitalWrite(ledPin, isOn ? LOW : HIGH);
-      Firebase.setBool(fbdo, "/status/led", isOn);
+      digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
@@ -127,24 +139,22 @@ void setup() {
   });
 
   server.on("/status", HTTP_GET, []() {
-    bool ledState = (digitalRead(ledPin) == LOW);
-    int servoVal = map(myServo.readMicroseconds(), 500, 2500, 0, 100);
-
-    String json = "{";
-    json += "\"ip\":\"" + WiFi.localIP().toString() + "\",";
-    json += "\"signal\":\"" + getSignalStrength() + "\",";
-    json += "\"led\":" + String(ledState ? "true" : "false") + ",";
-    json += "\"servo\":" + String(servoVal);
-    json += "}";
-
+    String json = "{\"ip\":\"" + WiFi.localIP().toString() + "\",\"signal\":\"" + getSignalStrength() + "\"}";
     server.send(200, "application/json", json);
   });
 
   server.begin();
+  ArduinoOTA.begin();
 }
 
 void loop() {
   server.handleClient();
   ArduinoOTA.handle();
   handleTelegramBot();
+
+  static unsigned long lastSend = 0;
+  if (millis() - lastSend > 10000) {
+    sendToFirebase();
+    lastSend = millis();
+  }
 }

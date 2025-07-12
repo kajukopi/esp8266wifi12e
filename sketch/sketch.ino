@@ -12,8 +12,8 @@ const char* ssid = "karimroy";
 const char* password = "09871234";
 
 // Telegram
-const char* botToken = "YOUR_TELEGRAM_BOT_TOKEN";
-String chatId = "YOUR_CHAT_ID";
+const char* botToken = "7826449058:AAHZgPVpCdmwHsmCO6D9wIsnpZj3fOyjXWM";
+String chatId = "7891041281";
 
 // ESP & Log
 ESP8266WebServer server(80);

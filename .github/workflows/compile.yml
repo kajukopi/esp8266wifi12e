@@ -36,8 +36,6 @@ jobs:
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "WebSockets"
         arduino-cli lib install "Servo"
-        mkdir -p $HOME/Arduino/libraries
-        git clone https://github.com/mobizt/Firebase-ESP8266.git $HOME/Arduino/libraries/FirebaseESP8266
 
     - name: 🛠️ Compile sketch
       run: |

@@ -4,7 +4,6 @@
 #include <ArduinoOTA.h>
 #include <Servo.h>
 #include <WiFiClientSecure.h>
-#include <FirebaseESP8266.h>
 #include <UniversalTelegramBot.h>
 #include "webpage.h"
 
@@ -15,14 +14,6 @@ const char* password = "09871234";
 // Telegram
 const char* botToken = "YOUR_TELEGRAM_BOT_TOKEN";
 String chatId = "YOUR_CHAT_ID";
-
-// Firebase Realtime DB
-#define FIREBASE_HOST "payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH "NyUsJ10Dn8STiQACqtSFttiGCqvE1kHNRXg9EBin"
-FirebaseData fbdo;
-FirebaseConfig config;
-FirebaseAuth auth;
-String firebasePath = "/device_status";
 
 // ESP & Log
 ESP8266WebServer server(80);
@@ -49,19 +40,6 @@ String getSignalStrength() {
   if (rssi > -70) return String(rssi) + " dBm (Good)";
   if (rssi > -80) return String(rssi) + " dBm (Fair)";
   return String(rssi) + " dBm (Weak)";
-}
-
-void sendToFirebase() {
-  FirebaseJson json;
-  json.set("ip", WiFi.localIP().toString());
-  json.set("signal", getSignalStrength());
-  json.set("millis", millis());
-
-  if (Firebase.setJSON(fbdo, firebasePath.c_str(), json)) {
-    addLog("📤 Sent to Firebase");
-  } else {
-    addLog("❌ Firebase Error: " + fbdo.errorReason());
-  }
 }
 
 void handleTelegramBot() {
@@ -107,13 +85,6 @@ void setup() {
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Firebase Init
-  config.host = FIREBASE_HOST;
-  config.api_key = FIREBASE_AUTH;
-  Firebase.begin(&config, &auth);
-  Firebase.reconnectWiFi(true);
-  addLog("🔥 Firebase Initialized");
-
   // Web Server
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
@@ -125,7 +96,6 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
-      sendToFirebase();
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -136,7 +106,6 @@ void setup() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
       digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
-      sendToFirebase();
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");

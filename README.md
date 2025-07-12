@@ -1,164 +1,125 @@
-# 🚀 ESP8266 Web OTA + Kontrol Servo + LED + Telegram Bot
+# 🚀 ESP8266 Web Control + Firebase + OTA + Telegram
 
-Proyek ini mendokumentasikan pengembangan sistem kontrol berbasis web dan Telegram untuk Lolin NodeMCU V1.0 (ESP8266 12E). Fitur mencakup pembaruan firmware OTA, kontrol perangkat (servo & LED) via web dan Telegram, serta otomatisasi build firmware menggunakan GitHub Actions.
+Proyek ini mendemonstrasikan **ESP8266 Web Panel** modern yang dapat dikontrol melalui **browser, Firebase Realtime Database, dan Telegram Bot**. Sistem ini cocok digunakan untuk otomasi rumah, monitoring jarak jauh, dan pembelajaran IoT.
 
----
+## 🔥 Fitur Terbaru (Setelah Update)
 
-## 📌 Tujuan Proyek
-
-- 🔁 Kompilasi firmware otomatis via GitHub Actions  
-- 🌐 Update firmware OTA melalui browser  
-- 🧭 Kontrol servo & LED via UI web  
-- 🤖 Kontrol servo & LED via Telegram Bot  
-- 📶 Menampilkan IP address & kekuatan sinyal WiFi  
-- 📱 Antarmuka web modern dan responsif (Bootstrap)
-
----
-
-## 🛠️ Proses Pengembangan
-
-### 1. Inisialisasi Proyek
-Struktur direktori:
-- `sketch/sketch.ino` → Kode utama ESP8266
-- `.github/workflows/compile.yml` → Workflow GitHub Actions
-
-### 2. Integrasi GitHub Actions
-GitHub workflow akan:
-- Install board ESP8266
-- Install library: `UniversalTelegramBot`, `ArduinoJson`
-- Compile `.ino`
-- Upload firmware `.bin` sebagai artifact dan GitHub Release
-
-### 3. OTA Update via Web
-Menggunakan `ESP8266HTTPUpdateServer` dan `ArduinoOTA`:
-- Update langsung dari browser
-- Halaman khusus di `/update`
-
-### 4. UI Kontrol Web
-- Servo dikontrol via slider (range 0–100%)
-- LED dikontrol via switch (active LOW)
-- Tampilan IP address dan kekuatan sinyal
-- Dibangun dengan **Bootstrap 5** dan kompatibel HP
-
-### 5. Telegram Bot Integration
-- Kirim perintah ke bot:
-  - `/led_on` dan `/led_off`
-  - `/servo_XX` (contoh: `/servo_30`)
-  - `/status` (IP dan sinyal WiFi)
-- Token dan chat ID dikonfigurasi aman
-- Menggunakan `UniversalTelegramBot` & HTTPS
-
-### 6. Kompilasi Otomatis dan Penamaan Firmware
-- Nama file otomatis: `esp8266wifi12e-YYYY-MM-DD-HHMM.bin`
+- ✅ **Firebase Realtime Database**: Sinkronisasi otomatis LED & Servo ke database cloud
+- 🌐 **UI modern** berbasis HTML + MDBootstrap + FontAwesome (tanpa library tambahan)
+- 💡 **Kontrol LED** real-time via browser, Firebase, atau Telegram
+- 🎚️ **Kontrol Servo** dari UI atau Firebase (0–100%)
+- 🔄 **OTA Firmware Update** langsung dari web UI
+- 📋 **Log Panel**:
+  - 📡 Log dari ESP8266
+  - ☁️ Log Firebase: setiap perubahan `led` atau `servo`
+- 🤖 **Telegram Bot Control**: /led_on, /led_off, /servo_50, /status
+- 🛠️ **CI/CD GitHub Actions**: Build otomatis `.bin` dari `sketch.ino` → GitHub Releases
 
 ---
 
-## 🤖 Telegram Bot Commands
+## 📸 Screenshot
 
-| Perintah       | Fungsi                                 |
-|----------------|----------------------------------------|
-| `/led_on`      | Nyalakan LED bawaan ESP                |
-| `/led_off`     | Matikan LED bawaan ESP                 |
-| `/servo_50`    | Gerakkan servo ke 50%                  |
-| `/status`      | Tampilkan IP dan kekuatan sinyal WiFi  |
+> *(Tambahkan screenshot hasil build UI, log panel, Firebase, dan Telegram bot di sini)*
 
 ---
 
-## 📱 Aplikasi Android Pendukung
+## 📁 Struktur Proyek
 
-| Aplikasi             | Kegunaan                                    |
-|----------------------|---------------------------------------------|
-| **ESP8266 Loader**   | Upload .bin ke ESP via serial atau OTG       |
-| **GitHub (App)**     | Memicu build, memantau status                |
-| **Telegram**         | Mengontrol ESP via chat                      |
-| **Google Chrome**    | Mengakses UI dan halaman OTA                 |
-| **Notepad / Code**   | Edit cepat langsung dari HP                  |
-
----
-
-## 📦 Fitur-Fitur
-
-- ✅ Kompilasi firmware otomatis via GitHub Actions  
-- ✅ OTA update melalui web browser  
-- ✅ Kontrol servo dan LED dari UI web  
-- ✅ Kontrol servo dan LED dari Telegram  
-- ✅ UI responsif berbasis Bootstrap  
-- ✅ Monitoring IP dan sinyal WiFi  
-
----
-
-## 🔮 Rencana Pengembangan
-
-- Simpan posisi terakhir servo di EEPROM  
-- Tambah proteksi password untuk OTA page  
-- Tambahkan tombol reboot otomatis setelah OTA  
-- Mode gelap (dark mode) untuk UI  
-- Log kontrol ke Telegram atau server eksternal  
-
----
-
-## 👤 Pengembang
-
-Dikembangkan oleh **Karim Roy Tampubolon**
-
----
-
-## 🗓️ Timeline Singkat
-
-| Tanggal         | Aktivitas                                    |
-|------------------|-----------------------------------------------|
-| **1 Juli 2025**  | Setup awal OTA dan GitHub Actions             |
-| **2 Juli 2025**  | UI web, kontrol servo & LED                   |
-| **3 Juli 2025**  | Telegram Bot + dokumentasi final              |
-| **11 Juli 2025** | Integrasi otomatisasi library di GitHub       |
-
----
-
-## 🔥 BONUS: ESP8266 Cheat Sheet
-
-### ⚡ Upload OTA via Web
-```cpp
-ArduinoOTA.handle(); // di loop()
 ```
-Update firmware dari browser, bahkan lewat HP!
-
-### 🤐 Proteksi OTA
-```cpp
-ArduinoOTA.setPassword("rahasiamu");
+esp8266wifi12e/
+├── sketch/
+│   ├── sketch.ino           # Firmware utama ESP8266
+│   └── webpage.h            # Halaman UI (HTML + CSS + JS)
+└── .github/
+    └── workflows/
+        └── compile.yml      # Workflow GitHub Actions untuk build OTA .bin
 ```
 
-### 📶 Cek Sinyal WiFi
-```cpp
-WiFi.RSSI(); // dBm
-```
+---
 
-### 📍 Simpan ke EEPROM
-```cpp
-EEPROM.write(0, nilai);
-EEPROM.commit();
-```
+## ⚙️ Cara Kerja
 
-### 🔋 Hemat Daya (Deep Sleep)
-```cpp
-ESP.deepSleep(60e6); // 60 detik
-```
-
-### 🌐 DNS Redirect (Captive Portal)
-```cpp
-dnsServer.start(53, "*", IPAddress(192,168,4,1));
-```
-
-### 📁 Upload File SPIFFS
-Di Arduino IDE: Tools → **ESP8266 Sketch Data Upload**
+1. ESP8266 terkoneksi ke WiFi
+2. Menyediakan web server dengan UI kontrol (diakses dari browser)
+3. Perubahan data dari Firebase (servo / LED) langsung dikirim ke ESP
+4. Perubahan dari UI → disimpan ke Firebase
+5. ESP log & Firebase log ditampilkan di web UI
+6. Telegram bot bisa mengontrol LED & Servo jarak jauh
+7. Firmware bisa di-*upload OTA* via halaman `/update`
 
 ---
 
-## ✅ Repositori & Demo
+## 🧠 Teknologi Digunakan
 
-📁 [GitHub Repo](https://github.com/kajukopi/esp8266wifi12e)  
-📦 Firmware terbaru: [Releases](https://github.com/kajukopi/esp8266wifi12e/releases)
+- ESP8266 Arduino Core
+- HTML5 + CSS3 + MDB UI Kit + FontAwesome
+- Firebase Realtime Database SDK v8
+- Telegram Bot API (`UniversalTelegramBot.h`)
+- OTA (ArduinoOTA)
+- GitHub Actions CI/CD
 
 ---
 
-Terima kasih telah mengeksplorasi proyek ini!  
-Silakan gunakan atau modifikasi untuk pembelajaran dan pengembangan IoT kamu sendiri.
+## 🛠️ Cara Instalasi
+
+### 1. Upload Firmware
+- Buka `sketch/sketch.ino` di Arduino IDE
+- Pastikan board: `NodeMCU 1.0 (ESP-12E Module)`
+- Upload ke board seperti biasa
+
+### 2. Setup Firebase
+- Buat project baru di [Firebase Console](https://console.firebase.google.com/)
+- Aktifkan Realtime Database (mode test)
+- Salin `firebaseConfig` dan tempel di `webpage.h` bagian `<script>`
+- Buat struktur database:
+```json
+{
+  "device": {
+    "led": false,
+    "servo": 0
+  }
+}
+```
+
+### 3. Siapkan Telegram Bot (opsional)
+- Cari BotFather di Telegram
+- Buat bot dan salin `token`
+- Gunakan @userinfobot untuk dapatkan `chat_id`
+- Ganti `YOUR_TELEGRAM_BOT_TOKEN` dan `YOUR_CHAT_ID` di `sketch.ino`
+
+### 4. Build Otomatis via GitHub
+- Setiap push ke `main` akan memicu GitHub Actions
+- File `.bin` hasil kompilasi bisa diunduh di halaman **Releases**
+- File ini bisa di-*upload OTA* melalui UI `/update`
+
+---
+
+## ✅ Endpoint yang Tersedia
+
+| Endpoint       | Fungsi                           |
+|----------------|----------------------------------|
+| `/`            | Web UI                           |
+| `/status`      | JSON status WiFi & sinyal        |
+| `/log`         | Log dari ESP8266                 |
+| `/setServo`    | Kontrol servo (0–100%)           |
+| `/toggleLED`   | Nyalakan/matikan LED             |
+| `/update`      | Halaman upload firmware OTA      |
+
+---
+
+## 📬 Contoh Perintah Telegram
+
+| Perintah       | Aksi                             |
+|----------------|----------------------------------|
+| `/led_on`      | Nyalakan LED                     |
+| `/led_off`     | Matikan LED                      |
+| `/servo_50`    | Gerakkan servo ke 50%            |
+| `/status`      | Tampilkan status ESP (IP + RSSI) |
+
+---
+
+## 🙌 Credits
+
+Dikembangkan oleh [@kajukopi](https://github.com/kajukopi)  
+Diperbarui dengan dukungan Firebase, Telegram & CI/CD  
+License: MIT

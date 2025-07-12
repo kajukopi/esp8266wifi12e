@@ -5,13 +5,12 @@
 #include <Servo.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
-#include "index.h"
-#include "update.h"
+#include "webpage.h"  // Gabungan halaman kontrol + OTA
 
 const char* ssid = "karimroy";
 const char* password = "09871234";
-const char* botToken = "YOUR_BOT_TOKEN";  // Ganti
-String chatId = "YOUR_CHAT_ID";           // Ganti
+const char* botToken = "YOUR_BOT_TOKEN";  // Ganti dengan token Telegram
+String chatId = "YOUR_CHAT_ID";           // Ganti dengan chat ID
 
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
@@ -72,18 +71,16 @@ void setup() {
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH);  // LED OFF
+  digitalWrite(ledPin, HIGH);  // LED OFF default
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
+  // Serve main page
   server.on("/", []() {
-    server.send(200, "text/html", MAIN_page);
+    server.send_P(200, "text/html", WEB_page);
   });
 
-  server.on("/update", HTTP_GET, []() {
-    server.send(200, "text/html", UPDATE_page);
-  });
-
+  // OTA POST handler
   httpUpdater.setup(&server, "/update");
 
   server.on("/setServo", []() {

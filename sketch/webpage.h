@@ -40,6 +40,15 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     .main-content { margin-left: 0; padding: 2rem; transition: margin-left 0.3s; }
     .card { margin-bottom: 2rem; }
     .navbar { z-index: 1100; }
+    .log-block {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      max-height: 250px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -94,8 +103,15 @@ const char WEB_page[] PROGMEM = R"rawliteral(
 
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-terminal"></i> Firebase Log</h5>
+            <div id="firebaseLog" class="log-block"></div>
+          </div>
+        </div>
+
+        <div class="card shadow-2-strong text-center">
+          <div class="card-body">
             <h5 class="card-title"><i class="fas fa-terminal"></i> ESP Log</h5>
-            <pre id="espLog" style="text-align:left; max-height: 200px; overflow-y: auto; background: #f8f9fa; padding:1rem; border-radius:10px; font-size: 0.9rem;"></pre>
+            <div id="espLog" class="log-block"></div>
           </div>
         </div>
       </div>
@@ -115,7 +131,95 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     </div>
   </div>
 
+<!-- Firebase & Control Script -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBczsujBWZbP2eq5C1YR1JF3xPixWVYnxY",
+    authDomain: "payunghitam.firebaseapp.com",
+    databaseURL: "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "payunghitam",
+    storageBucket: "payunghitam.firebasestorage.app",
+    messagingSenderId: "600763621790",
+    appId: "1:600763621790:web:7a21e49198a53e4142b68f"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const slider = document.getElementById('slider');
+  const angleValue = document.getElementById('angleValue');
+  const ledSwitch = document.getElementById('ledSwitch');
+  const logBox = document.getElementById("firebaseLog");
+
+  // Firebase listener → update UI + kirim ke ESP
+  db.ref("/device").on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const ledState = data.led;
+    const servoValue = data.servo;
+
+    // Update UI
+    if (typeof ledState === 'boolean') ledSwitch.checked = ledState;
+    if (typeof servoValue === 'number') {
+      slider.value = servoValue;
+      angleValue.textContent = `${servoValue}%`;
+    }
+
+    // Log perubahan
+    const logLine = `[FIREBASE] LED: ${ledState ? 'ON' : 'OFF'}, Servo: ${servoValue}%`;
+    logBox.textContent += logLine + "\n";
+    logBox.scrollTop = logBox.scrollHeight;
+
+    // Kirim ke ESP
+    fetch("/toggleLED?state=" + (ledState ? "on" : "off"));
+    fetch("/setServo?percent=" + servoValue);
+  });
+
+  // User control → simpan ke Firebase
+  if (ledSwitch) {
+    ledSwitch.onchange = () => {
+      const state = ledSwitch.checked;
+      db.ref("/device/led").set(state);
+    };
+  }
+
+  if (slider) {
+    slider.oninput = () => {
+      angleValue.textContent = slider.value + "%";
+      db.ref("/device/servo").set(parseInt(slider.value));
+    };
+  }
+
+  // ESP Data
+  function updateStatus() {
+    fetch("/status")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('ip').textContent = data.ip;
+        document.getElementById('signal').textContent = data.signal;
+      });
+  }
+
+  function updateESPLog() {
+    fetch("/log")
+      .then(res => res.text())
+      .then(data => {
+        const logEl = document.getElementById("espLog");
+        logEl.textContent = data;
+        logEl.scrollTop = logEl.scrollHeight;
+      });
+  }
+
+  // Loop
+  setInterval(updateStatus, 3000);
+  setInterval(updateESPLog, 3000);
+  updateStatus();
+  updateESPLog();
+  showPage('home');
+
   function openSidebar() {
     document.getElementById("mySidebar").style.width = "220px";
   }
@@ -127,48 +231,6 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
     closeSidebar();
   }
-
-  const slider = document.getElementById('slider');
-  const angleValue = document.getElementById('angleValue');
-  const ledSwitch = document.getElementById('ledSwitch');
-
-  if (slider) {
-    slider.oninput = () => {
-      angleValue.textContent = slider.value + "%";
-      fetch("/setServo?percent=" + slider.value);
-    };
-  }
-
-  if (ledSwitch) {
-    ledSwitch.onchange = () => {
-      fetch("/toggleLED?state=" + (ledSwitch.checked ? "on" : "off"));
-    };
-  }
-
-  function updateStatus() {
-    fetch("/status")
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('ip').textContent = data.ip;
-        document.getElementById('signal').textContent = data.signal;
-      });
-  }
-
-  function updateLog() {
-    fetch("/log")
-      .then(res => res.text())
-      .then(data => {
-        const logEl = document.getElementById("espLog");
-        logEl.textContent = data;
-        logEl.scrollTop = logEl.scrollHeight;
-      });
-  }
-
-  setInterval(updateStatus, 2000);
-  setInterval(updateLog, 3000);
-  updateStatus();
-  updateLog();
-  showPage('home');
 </script>
 </body>
 </html>

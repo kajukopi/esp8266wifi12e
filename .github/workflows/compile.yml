@@ -32,9 +32,7 @@ jobs:
 
     - name: 🧱 Configure Arduino library path
       run: |
-        echo "directories:
-  user: $HOME/Arduino
-" > ~/.arduino15/arduino-cli.yaml
+        echo "directories:\n  user: $HOME/Arduino" > ~/.arduino15/arduino-cli.yaml
 
     - name: 📚 Install required libraries
       run: |
@@ -42,20 +40,21 @@ jobs:
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "WebSockets"
         arduino-cli lib install "Servo"
+
+        # Install LiquidCrystal_I2C manually
         mkdir -p ~/Arduino/libraries
         cd ~/Arduino/libraries
         curl -L https://github.com/johnrickman/LiquidCrystal_I2C/archive/refs/heads/master.zip -o LiquidCrystal_I2C.zip
         unzip LiquidCrystal_I2C.zip
+        mv LiquidCrystal_I2C-master LiquidCrystal_I2C
 
     - name: 🛠️ Compile sketch
       run: |
         arduino-cli compile \
           --fqbn esp8266:esp8266:nodemcuv2 \
           sketch \
-          --output-dir build
-
-    - name: 🔍 List build directory
-      run: ls -lah build
+          --output-dir build \
+          --verbose
 
     - name: 📅 Get date
       id: date
@@ -63,7 +62,10 @@ jobs:
 
     - name: 📂 Rename firmware with date
       run: |
-        mv build/sketch.ino.bin build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin
+        ls build
+        for f in build/*.bin; do
+          mv "$f" "build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin"
+        done
 
     - name: 🚀 Upload firmware artifact
       uses: actions/upload-artifact@v4

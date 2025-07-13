@@ -103,8 +103,8 @@ void handleTelegramBot() {
 void setup() {
   Serial.begin(115200);
   lcd.init();
-  lcd.noBacklight(); // Mematikan backlight
-  // lcd.backlight();   // Menyalakan backlight
+  // lcd.noBacklight(); // Mematikan backlight
+  lcd.backlight();   // Menyalakan backlight
 
   // Tampilan awal
   lcd.setCursor(0, 0);

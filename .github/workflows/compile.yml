@@ -30,13 +30,22 @@ jobs:
         arduino-cli core update-index
         arduino-cli core install esp8266:esp8266
 
+    - name: 🧱 Configure Arduino library path
+      run: |
+        echo "directories:
+  user: $HOME/Arduino
+" > ~/.arduino15/arduino-cli.yaml
+
     - name: 📚 Install required libraries
       run: |
         arduino-cli lib install "UniversalTelegramBot"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "WebSockets"
         arduino-cli lib install "Servo"
-        arduino-cli lib install "LiquidCrystal_I2C"
+        mkdir -p ~/Arduino/libraries
+        cd ~/Arduino/libraries
+        curl -L https://github.com/johnrickman/LiquidCrystal_I2C/archive/refs/heads/master.zip -o LiquidCrystal_I2C.zip
+        unzip LiquidCrystal_I2C.zip
 
     - name: 🛠️ Compile sketch
       run: |

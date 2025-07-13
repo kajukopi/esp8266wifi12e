@@ -5,6 +5,8 @@
 #include <Servo.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include "webpage.h"
 
 // WiFi
@@ -15,17 +17,18 @@ const char* password = "09871234";
 const char* botToken = "7826449058:AAHZgPVpCdmwHsmCO6D9wIsnpZj3fOyjXWM";
 String chatId = "7891041281";
 
-// ESP & Log
+// Inisialisasi
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
 WiFiClientSecure secured_client;
 UniversalTelegramBot bot(botToken, secured_client);
 Servo myServo;
-String logBuffer = "";
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Ubah ke 0x3F jika tidak tampil
 
 const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
 unsigned long lastCheck = 0;
+String logBuffer = "";
 
 void addLog(String msg) {
   Serial.println(msg);
@@ -73,11 +76,25 @@ void handleTelegramBot() {
 
 void setup() {
   Serial.begin(115200);
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Connecting WiFi");
+
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500); Serial.print(".");
+    delay(500);
+    Serial.print(".");
   }
-  addLog("✅ WiFi Connected! IP: " + WiFi.localIP().toString());
+
+  String ip = WiFi.localIP().toString();
+  addLog("✅ WiFi Connected! IP: " + ip);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Connected!");
+  lcd.setCursor(0, 1);
+  lcd.print(ip);
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
@@ -85,7 +102,7 @@ void setup() {
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Web Server
+  // Web
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -122,6 +139,41 @@ void setup() {
   });
 
   server.begin();
+
+  // OTA Callbacks
+  ArduinoOTA.onStart([]() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("OTA Update Start");
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    lcd.setCursor(0, 1);
+    lcd.print("Progress: ");
+    lcd.print((progress * 100) / total);
+    lcd.print("%   ");
+  });
+
+  ArduinoOTA.onEnd([]() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("OTA Update Done");
+    delay(2000);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Connected!");
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.localIP());
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("OTA Error:");
+    lcd.setCursor(0, 1);
+    lcd.print(String(error));
+  });
+
   ArduinoOTA.begin();
 }
 

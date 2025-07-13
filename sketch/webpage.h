@@ -37,8 +37,8 @@ const char WEB_page[] PROGMEM = R"rawliteral(
       right: 1rem;
       font-size: 30px;
     }
-    .main-content { margin-left: 0; padding: 2rem; transition: margin-left 0.3s; }
-    .card { margin-bottom: 2rem; }
+    .main-content { margin-left: 0; padding: 0.5rem; transition: margin-left 0.3s; }
+    .card { margin-bottom: 1rem; }
     .navbar { z-index: 1100; }
     .log-block {
       background: #f8f9fa;

@@ -29,6 +29,10 @@ const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
 unsigned long lastCheck = 0;
 String logBuffer = "";
+String currentIp = "";
+
+unsigned long lcdRestoreTime = 0;
+unsigned long lastStatusDisplay = 0;
 
 void addLog(String msg) {
   Serial.println(msg);
@@ -45,6 +49,23 @@ String getSignalStrength() {
   return String(rssi) + " dBm (Weak)";
 }
 
+void displayIp() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Connected!");
+  lcd.setCursor(0, 1);
+  lcd.print(currentIp);
+}
+
+void showTempMessage(String line1, String line2 = "") {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
+  lcdRestoreTime = millis() + 3000;
+}
+
 void handleTelegramBot() {
   if (millis() - lastCheck > 10000) {
     int numNew = bot.getUpdates(bot.last_message_received + 1);
@@ -53,13 +74,16 @@ void handleTelegramBot() {
         String text = bot.messages[i].text;
         if (text == "/led_on") {
           digitalWrite(ledPin, LOW);
+          showTempMessage("LED On");
           bot.sendMessage(chatId, "✅ LED dinyalakan", "");
         } else if (text == "/led_off") {
           digitalWrite(ledPin, HIGH);
+          showTempMessage("LED Off");
           bot.sendMessage(chatId, "❌ LED dimatikan", "");
         } else if (text.startsWith("/servo_")) {
           int val = constrain(text.substring(7).toInt(), 0, 100);
           myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
+          showTempMessage("Servo " + String(val) + "%");
           bot.sendMessage(chatId, "🎚️ Servo ke " + String(val) + "%", "");
         } else if (text == "/status") {
           String msg = "📡 *ESP8266 Status*\n";
@@ -78,23 +102,35 @@ void setup() {
   Serial.begin(115200);
   lcd.init();
   lcd.backlight();
+
+  // Tampilan awal
+  lcd.setCursor(0, 0);
+  lcd.print("ESP8266");
+  lcd.setCursor(0, 1);
+  lcd.print("Web Server");
+  delay(2000);
+
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Connecting WiFi");
 
   WiFi.begin(ssid, password);
+  int dot = 0;
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    lcd.setCursor(0, 1);
+    lcd.print("Searching");
+    for (int i = 0; i < 3; i++) {
+      lcd.print(".");
+      delay(500);
+      dot++;
+    }
+    lcd.setCursor(9, 1);
+    lcd.print("   "); // Clear dots
   }
 
-  String ip = WiFi.localIP().toString();
-  addLog("✅ WiFi Connected! IP: " + ip);
-
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("WiFi Connected!");
-  lcd.setCursor(0, 1);
-  lcd.print(ip);
+  currentIp = WiFi.localIP().toString();
+  addLog("✅ WiFi Connected! IP: " + currentIp);
+  displayIp();
 
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
@@ -113,6 +149,7 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
+      showTempMessage("Servo " + String(val) + "%");
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -123,6 +160,7 @@ void setup() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
       digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
+      showTempMessage("LED " + state);
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
@@ -140,11 +178,9 @@ void setup() {
 
   server.begin();
 
-  // OTA Callbacks
+  // OTA
   ArduinoOTA.onStart([]() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("OTA Update Start");
+    showTempMessage("OTA Update Start");
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
@@ -155,23 +191,13 @@ void setup() {
   });
 
   ArduinoOTA.onEnd([]() {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("OTA Update Done");
+    showTempMessage("OTA Update Done");
     delay(2000);
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("WiFi Connected!");
-    lcd.setCursor(0, 1);
-    lcd.print(WiFi.localIP());
+    displayIp();
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("OTA Error:");
-    lcd.setCursor(0, 1);
-    lcd.print(String(error));
+    showTempMessage("OTA Error:", String(error));
   });
 
   ArduinoOTA.begin();
@@ -181,4 +207,20 @@ void loop() {
   server.handleClient();
   ArduinoOTA.handle();
   handleTelegramBot();
+
+  if (lcdRestoreTime > 0 && millis() > lcdRestoreTime) {
+    lcdRestoreTime = 0;
+    displayIp();
+  }
+
+  if (lcdRestoreTime == 0 && millis() - lastStatusDisplay > 10000) {
+    lastStatusDisplay = millis();
+    String rssiStr = getSignalStrength();
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Signal Strength");
+    lcd.setCursor(0, 1);
+    lcd.print(rssiStr.substring(0, 16)); // jaga agar muat di LCD
+    lcdRestoreTime = millis() + 2000;
+  }
 }

@@ -28,11 +28,12 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // Ubah ke 0x3F jika tidak tampil
 const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
 unsigned long lastCheck = 0;
-String logBuffer = "";
-String currentIp = "";
-
 unsigned long lcdRestoreTime = 0;
 unsigned long lastStatusDisplay = 0;
+
+String logBuffer = "";
+String currentIp = "";
+String lastServoStatus = "Servo -";
 
 void addLog(String msg) {
   Serial.println(msg);
@@ -74,16 +75,17 @@ void handleTelegramBot() {
         String text = bot.messages[i].text;
         if (text == "/led_on") {
           digitalWrite(ledPin, LOW);
-          showTempMessage("LED On");
+          showTempMessage("LED On", lastServoStatus);
           bot.sendMessage(chatId, "✅ LED dinyalakan", "");
         } else if (text == "/led_off") {
           digitalWrite(ledPin, HIGH);
-          showTempMessage("LED Off");
+          showTempMessage("LED Off", lastServoStatus);
           bot.sendMessage(chatId, "❌ LED dimatikan", "");
         } else if (text.startsWith("/servo_")) {
           int val = constrain(text.substring(7).toInt(), 0, 100);
           myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
-          showTempMessage("Servo " + String(val) + "%");
+          lastServoStatus = "Servo " + String(val) + "%";
+          showTempMessage(lastServoStatus);
           bot.sendMessage(chatId, "🎚️ Servo ke " + String(val) + "%", "");
         } else if (text == "/status") {
           String msg = "📡 *ESP8266 Status*\n";
@@ -115,17 +117,15 @@ void setup() {
   lcd.print("Connecting WiFi");
 
   WiFi.begin(ssid, password);
-  int dot = 0;
   while (WiFi.status() != WL_CONNECTED) {
     lcd.setCursor(0, 1);
     lcd.print("Searching");
     for (int i = 0; i < 3; i++) {
       lcd.print(".");
       delay(500);
-      dot++;
     }
     lcd.setCursor(9, 1);
-    lcd.print("   "); // Clear dots
+    lcd.print("   ");
   }
 
   currentIp = WiFi.localIP().toString();
@@ -149,7 +149,8 @@ void setup() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
       myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
-      showTempMessage("Servo " + String(val) + "%");
+      lastServoStatus = "Servo " + String(val) + "%";
+      showTempMessage(lastServoStatus);
       server.send(200, "text/plain", "OK");
     } else {
       server.send(400, "text/plain", "Missing percent");
@@ -160,7 +161,7 @@ void setup() {
     if (server.hasArg("state")) {
       String state = server.arg("state");
       digitalWrite(ledPin, (state == "on") ? LOW : HIGH);
-      showTempMessage("LED " + state);
+      showTempMessage("LED " + state, lastServoStatus);
       server.send(200, "text/plain", "LED " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
@@ -220,7 +221,7 @@ void loop() {
     lcd.setCursor(0, 0);
     lcd.print("Signal Strength");
     lcd.setCursor(0, 1);
-    lcd.print(rssiStr.substring(0, 16)); // jaga agar muat di LCD
+    lcd.print(rssiStr.substring(0, 16));
     lcdRestoreTime = millis() + 2000;
   }
 }

@@ -103,6 +103,16 @@ const char WEB_page[] PROGMEM = R"rawliteral(
 
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-plug"></i> Relay Control</h5>
+            <div class="form-check form-switch d-flex justify-content-center">
+              <input class="form-check-input" type="checkbox" id="relaySwitch">
+              <label class="form-check-label ms-2" for="relaySwitch">Relay Status</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-2-strong text-center">
+          <div class="card-body">
             <h5 class="card-title"><i class="fas fa-terminal"></i> Firebase Log</h5>
             <div id="firebaseLog" class="log-block"></div>
           </div>
@@ -131,107 +141,6 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     </div>
   </div>
 
-<!-- Firebase & Control Script -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyBczsujBWZbP2eq5C1YR1JF3xPixWVYnxY",
-    authDomain: "payunghitam.firebaseapp.com",
-    databaseURL: "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "payunghitam",
-    storageBucket: "payunghitam.firebasestorage.app",
-    messagingSenderId: "600763621790",
-    appId: "1:600763621790:web:7a21e49198a53e4142b68f"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  const slider = document.getElementById('slider');
-  const angleValue = document.getElementById('angleValue');
-  const ledSwitch = document.getElementById('ledSwitch');
-  const logBox = document.getElementById("firebaseLog");
-
-  // Firebase listener → update UI + kirim ke ESP
-  db.ref("/device").on("value", snapshot => {
-    const data = snapshot.val();
-    if (!data) return;
-
-    const ledState = data.led;
-    const servoValue = data.servo;
-
-    // Update UI
-    if (typeof ledState === 'boolean') ledSwitch.checked = ledState;
-    if (typeof servoValue === 'number') {
-      slider.value = servoValue;
-      angleValue.textContent = `${servoValue}%`;
-    }
-
-    // Log perubahan
-    const logLine = `[FIREBASE] LED: ${ledState ? 'ON' : 'OFF'}, Servo: ${servoValue}%`;
-    logBox.textContent += logLine + "\n";
-    logBox.scrollTop = logBox.scrollHeight;
-
-    // Kirim ke ESP
-    fetch("/toggleLED?state=" + (ledState ? "on" : "off"));
-    fetch("/setServo?percent=" + servoValue);
-  });
-
-  // User control → simpan ke Firebase
-  if (ledSwitch) {
-    ledSwitch.onchange = () => {
-      const state = ledSwitch.checked;
-      db.ref("/device/led").set(state);
-    };
-  }
-
-  if (slider) {
-    slider.oninput = () => {
-      angleValue.textContent = slider.value + "%";
-      db.ref("/device/servo").set(parseInt(slider.value));
-    };
-  }
-
-  // ESP Data
-  function updateStatus() {
-    fetch("/status")
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('ip').textContent = data.ip;
-        document.getElementById('signal').textContent = data.signal;
-      });
-  }
-
-  function updateESPLog() {
-    fetch("/log")
-      .then(res => res.text())
-      .then(data => {
-        const logEl = document.getElementById("espLog");
-        logEl.textContent = data;
-        logEl.scrollTop = logEl.scrollHeight;
-      });
-  }
-
-  // Loop
-  setInterval(updateStatus, 3000);
-  setInterval(updateESPLog, 3000);
-  updateStatus();
-  updateESPLog();
-  showPage('home');
-
-  function openSidebar() {
-    document.getElementById("mySidebar").style.width = "220px";
-  }
-  function closeSidebar() {
-    document.getElementById("mySidebar").style.width = "0";
-  }
-  function showPage(page) {
-    document.getElementById("home-page").style.display = (page === "home") ? "block" : "none";
-    document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
-    closeSidebar();
-  }
-</script>
 </body>
 </html>
 )rawliteral";

@@ -101,6 +101,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
+        <!-- ✅ Relay Control -->
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
             <h5 class="card-title"><i class="fas fa-plug"></i> Relay Control</h5>
@@ -141,6 +142,117 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     </div>
   </div>
 
+<!-- Firebase & Control Script -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBczsujBWZbP2eq5C1YR1JF3xPixWVYnxY",
+    authDomain: "payunghitam.firebaseapp.com",
+    databaseURL: "https://payunghitam-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "payunghitam",
+    storageBucket: "payunghitam.firebasestorage.app",
+    messagingSenderId: "600763621790",
+    appId: "1:600763621790:web:7a21e49198a53e4142b68f"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const slider = document.getElementById('slider');
+  const angleValue = document.getElementById('angleValue');
+  const ledSwitch = document.getElementById('ledSwitch');
+  const relaySwitch = document.getElementById('relaySwitch'); // ✅ new
+  const logBox = document.getElementById("firebaseLog");
+
+  // Firebase listener → update UI + kirim ke ESP
+  db.ref("/device").on("value", snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const ledState = data.led;
+    const servoValue = data.servo;
+    const relayState = data.relay;
+
+    // Update UI
+    if (typeof ledState === 'boolean') ledSwitch.checked = ledState;
+    if (typeof servoValue === 'number') {
+      slider.value = servoValue;
+      angleValue.textContent = `${servoValue}%`;
+    }
+    if (typeof relayState === 'boolean') relaySwitch.checked = relayState; // ✅
+
+    // Log perubahan
+    const logLine = `[FIREBASE] LED: ${ledState ? 'ON' : 'OFF'}, Servo: ${servoValue}%, Relay: ${relayState ? 'ON' : 'OFF'}`;
+    logBox.textContent += logLine + "\n";
+    logBox.scrollTop = logBox.scrollHeight;
+
+    // Kirim ke ESP
+    fetch("/toggleLED?state=" + (ledState ? "on" : "off"));
+    fetch("/setServo?percent=" + servoValue);
+    fetch("/toggleRelay?state=" + (relayState ? "on" : "off")); // ✅
+  });
+
+  // User control → simpan ke Firebase
+  if (ledSwitch) {
+    ledSwitch.onchange = () => {
+      const state = ledSwitch.checked;
+      db.ref("/device/led").set(state);
+    };
+  }
+
+  if (relaySwitch) {  // ✅
+    relaySwitch.onchange = () => {
+      const state = relaySwitch.checked;
+      db.ref("/device/relay").set(state);
+    };
+  }
+
+  if (slider) {
+    slider.oninput = () => {
+      angleValue.textContent = slider.value + "%";
+      db.ref("/device/servo").set(parseInt(slider.value));
+    };
+  }
+
+  function updateStatus() {
+    fetch("/status")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('ip').textContent = data.ip;
+        document.getElementById('signal').textContent = data.signal;
+      });
+  }
+
+  function updateESPLog() {
+    fetch("/log")
+      .then(res => res.text())
+      .then(data => {
+        const logEl = document.getElementById("espLog");
+        logEl.textContent = data;
+        logEl.scrollTop = logEl.scrollHeight;
+      });
+  }
+
+  // Loop
+  setInterval(updateStatus, 3000);
+  setInterval(updateESPLog, 3000);
+  updateStatus();
+  updateESPLog();
+  showPage('home');
+
+  function openSidebar() {
+    document.getElementById("mySidebar").style.width = "220px";
+  }
+  function closeSidebar() {
+    document.getElementById("mySidebar").style.width = "0";
+  }
+  function showPage(page) {
+    document.getElementById("home-page").style.display = (page === "home") ? "block" : "none";
+    document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
+    closeSidebar();
+  }
+</script>
 </body>
 </html>
 )rawliteral";

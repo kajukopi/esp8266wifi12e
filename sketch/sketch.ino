@@ -27,6 +27,9 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // Ubah ke 0x3F jika tidak tampil
 
 const int servoPin = D5;
 const int ledPin = LED_BUILTIN;
+const int relayPin = D6;
+bool relayState = false;
+
 unsigned long lastCheck = 0;
 unsigned long lcdRestoreTime = 0;
 unsigned long lastStatusDisplay = 0;
@@ -81,6 +84,16 @@ void handleTelegramBot() {
           digitalWrite(ledPin, HIGH);
           showTempMessage("LED Off", lastServoStatus);
           bot.sendMessage(chatId, "❌ LED dimatikan", "");
+        } else if (text == "/relay_on") {
+          relayState = true;
+          digitalWrite(relayPin, HIGH);
+          showTempMessage("Relay ON", lastServoStatus);
+          bot.sendMessage(chatId, "✅ Relay dinyalakan", "");
+        } else if (text == "/relay_off") {
+          relayState = false;
+          digitalWrite(relayPin, LOW);
+          showTempMessage("Relay OFF", lastServoStatus);
+          bot.sendMessage(chatId, "❌ Relay dimatikan", "");
         } else if (text.startsWith("/servo_")) {
           int val = constrain(text.substring(7).toInt(), 0, 100);
           myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));
@@ -103,10 +116,8 @@ void handleTelegramBot() {
 void setup() {
   Serial.begin(115200);
   lcd.init();
-  // lcd.noBacklight(); // Mematikan backlight
-  lcd.backlight();   // Menyalakan backlight
+  lcd.backlight();
 
-  // Tampilan awal
   lcd.setCursor(0, 0);
   lcd.print("ESP8266");
   lcd.setCursor(0, 1);
@@ -136,10 +147,11 @@ void setup() {
   secured_client.setInsecure();
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, HIGH);
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
   myServo.attach(servoPin);
   myServo.writeMicroseconds(500);
 
-  // Web
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -169,6 +181,18 @@ void setup() {
     }
   });
 
+  server.on("/toggleRelay", []() {
+    if (server.hasArg("state")) {
+      String state = server.arg("state");
+      relayState = (state == "on");
+      digitalWrite(relayPin, relayState ? HIGH : LOW);
+      showTempMessage("Relay " + state, lastServoStatus);
+      server.send(200, "text/plain", "Relay " + state);
+    } else {
+      server.send(400, "text/plain", "Missing state");
+    }
+  });
+
   server.on("/status", HTTP_GET, []() {
     String json = "{\"ip\":\"" + WiFi.localIP().toString() + "\",\"signal\":\"" + getSignalStrength() + "\"}";
     server.send(200, "application/json", json);
@@ -180,7 +204,6 @@ void setup() {
 
   server.begin();
 
-  // OTA
   ArduinoOTA.onStart([]() {
     showTempMessage("OTA Update Start");
   });

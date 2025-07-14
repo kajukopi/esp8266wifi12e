@@ -43,11 +43,11 @@ void addLog(String msg) {
 
 String getSignalStrength() {
   int rssi = WiFi.RSSI();
-  if (rssi > -50) return String(rssi) + " dBm (Excellent)";
-  if (rssi > -60) return String(rssi) + " dBm (Very Good)";
-  if (rssi > -70) return String(rssi) + " dBm (Good)";
-  if (rssi > -80) return String(rssi) + " dBm (Fair)";
-  return String(rssi) + " dBm (Weak)";
+  if (rssi > -50) return String(rssi) + " dBm (100%)";
+  if (rssi > -60) return String(rssi) + " dBm (80%)";
+  if (rssi > -70) return String(rssi) + " dBm (60%)";
+  if (rssi > -80) return String(rssi) + " dBm (40%)";
+  return String(rssi) + " dBm (20%)";
 }
 
 void displayIp() {

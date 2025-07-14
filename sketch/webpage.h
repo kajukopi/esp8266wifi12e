@@ -83,14 +83,20 @@ const char WEB_page[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
+        <!-- Servo Control with +/- -->
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
             <h5 class="card-title"><i class="fas fa-sliders-h"></i> Servo Control</h5>
             <p>Angle: <span id="angleValue">0%</span></p>
-            <input type="range" class="form-range" id="slider" min="0" max="100" value="0">
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <button class="btn btn-sm btn-primary" onclick="changeServo(-5)">-</button>
+              <input type="range" class="form-range flex-grow-1" id="slider" min="0" max="100" value="0">
+              <button class="btn btn-sm btn-primary" onclick="changeServo(5)">+</button>
+            </div>
           </div>
         </div>
 
+        <!-- LED Control -->
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
             <h5 class="card-title"><i class="fas fa-lightbulb"></i> LED Control</h5>
@@ -101,7 +107,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
-        <!-- ✅ Relay Control -->
+        <!-- Relay Control -->
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
             <h5 class="card-title"><i class="fas fa-plug"></i> Relay Control</h5>
@@ -112,6 +118,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
           </div>
         </div>
 
+        <!-- Logs -->
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
             <h5 class="card-title"><i class="fas fa-terminal"></i> Firebase Log</h5>
@@ -127,7 +134,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
         </div>
       </div>
 
-      <!-- Update Page -->
+      <!-- OTA Update -->
       <div id="update-page" style="display:none">
         <div class="card shadow-2-strong text-center">
           <div class="card-body">
@@ -142,7 +149,6 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     </div>
   </div>
 
-<!-- Firebase & Control Script -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
@@ -162,49 +168,54 @@ const char WEB_page[] PROGMEM = R"rawliteral(
   const slider = document.getElementById('slider');
   const angleValue = document.getElementById('angleValue');
   const ledSwitch = document.getElementById('ledSwitch');
-  const relaySwitch = document.getElementById('relaySwitch'); // ✅ new
+  const relaySwitch = document.getElementById('relaySwitch');
   const logBox = document.getElementById("firebaseLog");
 
-  // Firebase listener → update UI + kirim ke ESP
+  let lastState = { led: null, servo: null, relay: null };
+
   db.ref("/device").on("value", snapshot => {
     const data = snapshot.val();
     if (!data) return;
 
-    const ledState = data.led;
-    const servoValue = data.servo;
-    const relayState = data.relay;
+    const { led, servo, relay } = data;
+
+    // Send Telegram if value changed
+    if (lastState.led !== null && lastState.led !== led) {
+      sendTelegram(`LED ${led ? "ON" : "OFF"}`);
+    }
+    if (lastState.servo !== null && lastState.servo !== servo) {
+      sendTelegram(`Servo diubah ke ${servo}%`);
+    }
+    if (lastState.relay !== null && lastState.relay !== relay) {
+      sendTelegram(`Relay ${relay ? "ON" : "OFF"}`);
+    }
+
+    lastState = { led, servo, relay };
 
     // Update UI
-    if (typeof ledState === 'boolean') ledSwitch.checked = ledState;
-    if (typeof servoValue === 'number') {
-      slider.value = servoValue;
-      angleValue.textContent = `${servoValue}%`;
-    }
-    if (typeof relayState === 'boolean') relaySwitch.checked = relayState; // ✅
+    ledSwitch.checked = led;
+    slider.value = servo;
+    angleValue.textContent = `${servo}%`;
+    relaySwitch.checked = relay;
 
-    // Log perubahan
-    const logLine = `[FIREBASE] LED: ${ledState ? 'ON' : 'OFF'}, Servo: ${servoValue}%, Relay: ${relayState ? 'ON' : 'OFF'}`;
-    logBox.textContent += logLine + "\n";
+    const logLine = `[FIREBASE] LED: ${led ? 'ON' : 'OFF'}, Servo: ${servo}%, Relay: ${relay ? 'ON' : 'OFF'}`;
+    logBox.textContent += logLine + "\\n";
     logBox.scrollTop = logBox.scrollHeight;
 
-    // Kirim ke ESP
-    fetch("/toggleLED?state=" + (ledState ? "on" : "off"));
-    fetch("/setServo?percent=" + servoValue);
-    fetch("/toggleRelay?state=" + (relayState ? "on" : "off")); // ✅
+    fetch("/toggleLED?state=" + (led ? "on" : "off"));
+    fetch("/setServo?percent=" + servo);
+    fetch("/toggleRelay?state=" + (relay ? "on" : "off"));
   });
 
-  // User control → simpan ke Firebase
   if (ledSwitch) {
     ledSwitch.onchange = () => {
-      const state = ledSwitch.checked;
-      db.ref("/device/led").set(state);
+      db.ref("/device/led").set(ledSwitch.checked);
     };
   }
 
-  if (relaySwitch) {  // ✅
+  if (relaySwitch) {
     relaySwitch.onchange = () => {
-      const state = relaySwitch.checked;
-      db.ref("/device/relay").set(state);
+      db.ref("/device/relay").set(relaySwitch.checked);
     };
   }
 
@@ -213,6 +224,22 @@ const char WEB_page[] PROGMEM = R"rawliteral(
       angleValue.textContent = slider.value + "%";
       db.ref("/device/servo").set(parseInt(slider.value));
     };
+  }
+
+  function changeServo(delta) {
+    let newVal = parseInt(slider.value) + delta;
+    newVal = Math.max(0, Math.min(100, newVal));
+    slider.value = newVal;
+    angleValue.textContent = newVal + "%";
+    db.ref("/device/servo").set(newVal);
+  }
+
+  function sendTelegram(msg) {
+    fetch("/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "msg=" + encodeURIComponent(msg)
+    });
   }
 
   function updateStatus() {
@@ -234,7 +261,6 @@ const char WEB_page[] PROGMEM = R"rawliteral(
       });
   }
 
-  // Loop
   setInterval(updateStatus, 3000);
   setInterval(updateESPLog, 3000);
   updateStatus();

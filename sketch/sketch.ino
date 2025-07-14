@@ -67,7 +67,7 @@ void showTempMessage(String line1, String line2 = "") {
 }  
   
 void handleTelegramBot() {  
-  if (millis() - lastCheck > 10000) {  
+  if (millis() - lastCheck > 5000) {  
     int numNew = bot.getUpdates(bot.last_message_received + 1);  
     while (numNew) {  
       for (int i = 0; i < numNew; i++) {  
@@ -145,7 +145,7 @@ void setup() {
   digitalWrite(relayPin, LOW);       // ✅ Set relay ke posisi mati awal
   
   myServo.attach(servoPin);  
-  myServo.writeMicroseconds(500);  
+  myServo.writeMicroseconds(544);  
   
   server.on("/", []() {  
     server.send_P(200, "text/html", WEB_page);  
@@ -156,7 +156,7 @@ void setup() {
   server.on("/setServo", []() {  
     if (server.hasArg("percent")) {  
       int val = constrain(server.arg("percent").toInt(), 0, 100);  
-      myServo.writeMicroseconds(map(val, 0, 100, 500, 2500));  
+      myServo.writeMicroseconds(map(val, 0, 100, 544, 2400));  
       lastServoStatus = "Servo " + String(val) + "%";  
       showTempMessage(lastServoStatus);  
       server.send(200, "text/plain", "OK");  

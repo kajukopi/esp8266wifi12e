@@ -43,11 +43,16 @@ void addLog(String msg) {
 
 String getSignalStrength() {
   int rssi = WiFi.RSSI();
-  if (rssi > -50) return String(rssi) + " dBm (▒▒▒▒▒)";
-  if (rssi > -60) return String(rssi) + " dBm (▒▒▒▒)";
-  if (rssi > -70) return String(rssi) + " dBm (▒▒▒)";
-  if (rssi > -80) return String(rssi) + " dBm (▒▒)";
-  return String(rssi) + " dBm (▒)";
+  String bar = "";
+
+  if (rssi > -50)       bar = String(byte(255)) + String(byte(255)) + String(byte(255)) + String(byte(255)) + String(byte(255));
+  else if (rssi > -60)  bar = String(byte(255)) + String(byte(255)) + String(byte(255)) + String(byte(255));
+  else if (rssi > -70)  bar = String(byte(255)) + String(byte(255)) + String(byte(255));
+  else if (rssi > -80)  bar = String(byte(255)) + String(byte(255));
+  else if (rssi > -90)  bar = String(byte(255));
+  else                  bar = "-----";
+
+  return String(rssi) + " dBm (" + bar + ")";
 }
 
 void displayIp() {

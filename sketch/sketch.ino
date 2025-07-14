@@ -135,7 +135,6 @@ void setup() {
   myServo.attach(servoPin);
   myServo.writeMicroseconds(544);  // Paling kiri (0°)
 
-  // HTTP Routes
   server.on("/", []() {
     server.send_P(200, "text/html", WEB_page);
   });
@@ -143,7 +142,7 @@ void setup() {
   server.on("/setServo", []() {
     if (server.hasArg("percent")) {
       int val = constrain(server.arg("percent").toInt(), 0, 100);
-      myServo.writeMicroseconds(map(val, 0, 100, 544, 2400));
+      myServo.writeMicroseconds(map(val, 0, 100, 500, 2400));
       lastServoStatus = "Servo " + String(val) + "%";
       showTempMessage(lastServoStatus);
       server.send(200, "text/plain", "OK");
@@ -171,17 +170,6 @@ void setup() {
       server.send(200, "text/plain", "Relay " + state);
     } else {
       server.send(400, "text/plain", "Missing state");
-    }
-  });
-
-  server.on("/notify", HTTP_POST, []() {
-    if (server.hasArg("msg")) {
-      String msg = server.arg("msg");
-      bot.sendMessage(chatId, "🔔 " + msg, "");
-      server.send(200, "text/plain", "Notified");
-      addLog("[NOTIF] " + msg);
-    } else {
-      server.send(400, "text/plain", "Missing msg");
     }
   });
 

@@ -144,7 +144,10 @@ const char WEB_page[] PROGMEM = R"rawliteral(
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script>
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyBczsujBWZbP2eq5C1YR1JF3xPixWVYnxY",
     authDomain: "payunghitam.firebaseapp.com",
@@ -157,13 +160,24 @@ const char WEB_page[] PROGMEM = R"rawliteral(
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
+  // Helper debounce
+  function debounce(func, delay) {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), delay);
+    };
+  }
+
+  // DOM references
   const slider = document.getElementById('slider');
   const angleValue = document.getElementById('angleValue');
   const ledSwitch = document.getElementById('ledSwitch');
   const relaySwitch = document.getElementById('relaySwitch');
   const logBox = document.getElementById("firebaseLog");
 
-  db.ref("/device").on("value", snapshot => {
+  // Firebase listener
+  db.ref("/device").on("value", async (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
     const ledState = data.led;
@@ -181,68 +195,96 @@ const char WEB_page[] PROGMEM = R"rawliteral(
     logBox.textContent += logLine + "\n";
     logBox.scrollTop = logBox.scrollHeight;
 
-    fetch("/toggleLED?state=" + (ledState ? "on" : "off"));
-    fetch("/setServo?percent=" + servoValue);
-    fetch("/toggleRelay?state=" + (relayState ? "on" : "off"));
+    try {
+      await fetch(`/toggleLED?state=${ledState ? "on" : "off"}`);
+      await fetch(`/setServo?percent=${servoValue}`);
+      await fetch(`/toggleRelay?state=${relayState ? "on" : "off"}`);
+    } catch (err) {
+      console.error("Error syncing to ESP:", err);
+    }
   });
 
+  // Debounced event listeners
   if (ledSwitch) {
-    ledSwitch.onchange = () => {
-      const state = ledSwitch.checked;
-      db.ref("/device/led").set(state);
-    };
+    const updateLED = debounce(async () => {
+      try {
+        await db.ref("/device/led").set(ledSwitch.checked);
+      } catch (err) {
+        console.error("Error setting LED:", err);
+      }
+    }, 300);
+    ledSwitch.addEventListener("change", updateLED);
   }
 
   if (relaySwitch) {
-    relaySwitch.onchange = () => {
-      const state = relaySwitch.checked;
-      db.ref("/device/relay").set(state);
-    };
+    const updateRelay = debounce(async () => {
+      try {
+        await db.ref("/device/relay").set(relaySwitch.checked);
+      } catch (err) {
+        console.error("Error setting Relay:", err);
+      }
+    }, 300);
+    relaySwitch.addEventListener("change", updateRelay);
   }
 
   if (slider) {
-    slider.oninput = () => {
+    const updateServo = debounce(async () => {
       angleValue.textContent = slider.value + "%";
-      db.ref("/device/servo").set(parseInt(slider.value));
-    };
+      try {
+        await db.ref("/device/servo").set(parseInt(slider.value));
+      } catch (err) {
+        console.error("Error setting Servo:", err);
+      }
+    }, 300);
+    slider.addEventListener("input", updateServo);
   }
 
-  function updateStatus() {
-    fetch("/status")
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('ip').textContent = data.ip;
-        document.getElementById('signal').textContent = data.signal;
-      });
+  // Update status info
+  async function updateStatus() {
+    try {
+      const res = await fetch("/status");
+      const data = await res.json();
+      document.getElementById('ip').textContent = data.ip;
+      document.getElementById('signal').textContent = data.signal;
+    } catch (err) {
+      console.error("Failed to fetch status:", err);
+    }
   }
 
-  function updateESPLog() {
-    fetch("/log")
-      .then(res => res.text())
-      .then(data => {
-        const logEl = document.getElementById("espLog");
-        logEl.textContent = data;
-        logEl.scrollTop = logEl.scrollHeight;
-      });
+  // Update ESP log
+  async function updateESPLog() {
+    try {
+      const res = await fetch("/log");
+      const data = await res.text();
+      const logEl = document.getElementById("espLog");
+      logEl.textContent = data;
+      logEl.scrollTop = logEl.scrollHeight;
+    } catch (err) {
+      console.error("Failed to fetch ESP log:", err);
+    }
   }
 
-  setInterval(updateStatus, 3000);
-  setInterval(updateESPLog, 3000);
-  updateStatus();
-  updateESPLog();
-  showPage('home');
-
+  // Sidebar toggle
   function openSidebar() {
     document.getElementById("mySidebar").style.width = "220px";
   }
+
   function closeSidebar() {
     document.getElementById("mySidebar").style.width = "0";
   }
+
   function showPage(page) {
     document.getElementById("home-page").style.display = (page === "home") ? "block" : "none";
     document.getElementById("update-page").style.display = (page === "update") ? "block" : "none";
     closeSidebar();
   }
+
+  // Init
+  setInterval(updateStatus, 3000);
+  setInterval(updateESPLog, 3000);
+  updateStatus();
+  updateESPLog();
+  showPage('home');
 </script>
 </body>
 </html>

@@ -74,27 +74,27 @@ jobs:
       run: |
         ls build  # 👀 Lihat isi folder
         for f in build/*.bin; do
-          mv "$f" "build/esp8266wifi12e-${{ steps.date.outputs.today }}.bin"
+          mv "$f" "build/ESP8266-${{ steps.date.outputs.today }}.bin"
         done
         # 🏷️ Tambahkan timestamp ke nama firmware
 
     - name: 📤 Upload firmware artifact
       uses: actions/upload-artifact@v4
       with:
-        name: esp8266wifi12e-${{ steps.date.outputs.today }}
-        path: build/esp8266wifi12e-*.bin
+        name: ESP8266-${{ steps.date.outputs.today }}
+        path: build/ESP8266-*.bin
         # ☁️ Simpan sebagai artifact GitHub Actions
 
     - name: 🚀 Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: esp8266wifi12e-${{ steps.date.outputs.today }}
-        files: build/esp8266wifi12e-*.bin
+        tag_name: ESP8266-${{ steps.date.outputs.today }}
+        files: build/ESP8266-*.bin
         body: |
           🔖 **Informasi Build Firmware**
           ----------------------------------------
-          🛠️ Nama File: `esp8266wifi12e-${{ steps.date.outputs.today }}.bin`  
+          🛠️ Nama File: `ESP8266-${{ steps.date.outputs.today }}.bin`  
           📅 Tanggal Build: ${{ steps.date.outputs.detail }}
           📂 Direktori Output: `/build`
 
-          ✅ Firmware ini dibuat otomatis menggunakan GitHub Actions.
+          ✅ dibuat oleh karimroy.digital

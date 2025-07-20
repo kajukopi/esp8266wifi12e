@@ -66,7 +66,7 @@ const char WEB_page[] PROGMEM = R"rawliteral(
       <button class="btn btn-light btn-sm" onclick="openSidebar()">
         <i class="fas fa-bars text-primary"></i>
       </button>
-      <span class="navbar-brand ms-3">ESP8266 Control Panel</span>
+      <span class="navbar-brand ms-3">ESP8266 TikTok</span>
     </div>
   </nav>
 
